@@ -18,7 +18,7 @@ import Data.Ord  ( Ord )
 import Prelude   ( Integer )
 import Text.Show ( Show )
 
--- from numerals:
+-- from numerals-base:
 import qualified Text.Numeral.Exp.Classes as C
 
 

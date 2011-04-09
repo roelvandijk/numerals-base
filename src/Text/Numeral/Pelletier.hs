@@ -15,7 +15,7 @@ import Prelude   ( Integral, Num, (+), (-) )
 -- from base-unicode-symbols:
 import Prelude.Unicode ( (⋅) )
 
--- from numerals:
+-- from numerals-base:
 import Text.Numeral
 import Text.Numeral.Misc  ( dec )
 import Text.Numeral.Rules ( Rule, atom, atom1, add, mul, mul1 )

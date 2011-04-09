@@ -47,7 +47,7 @@ import Data.Eq.Unicode       ( (≡) )
 import Data.Function.Unicode ( (∘) )
 import Prelude.Unicode       ( (⋅) )
 
--- from numerals:
+-- from numerals-base:
 import qualified Text.Numeral.Exp.Classes as C
 import Text.Numeral.Exp ( Side(L, R) )
 import Text.Numeral.Misc ( intLog )

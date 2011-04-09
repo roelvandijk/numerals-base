@@ -40,7 +40,7 @@ import qualified Data.Map as M ( Map, fromList, lookup )
 -- from containers-unicode-symbols:
 import Data.Map.Unicode ( (∪) )
 
--- from numerals:
+-- from numerals-base:
 import Text.Numeral
 import qualified Text.Numeral.Exp.Classes as C
 

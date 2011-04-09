@@ -25,7 +25,7 @@ import Prelude       ( Integer )
 -- from base-unicode-symbols:
 import Data.Monoid.Unicode ( (⊕) )
 
--- from numerals:
+-- from numerals-base:
 import Text.Numeral.Exp ( Exp(..), Side(L, R), Ctx(..) )
 
 

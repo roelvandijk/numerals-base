@@ -16,7 +16,7 @@ import Data.Maybe    ( fromMaybe )
 -- from base-unicode-symbols:
 import Data.Monoid.Unicode   ( (⊕) )
 
--- from numerals:
+-- from numerals-base:
 import Text.Numeral
 import Text.Numeral.Misc
 import qualified Text.Numeral.Language.AMP as AMP

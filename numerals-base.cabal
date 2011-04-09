@@ -1,0 +1,60 @@
+name:          numerals-base
+version:       0.3
+cabal-version: >= 1.8
+build-type:    Simple
+stability:     experimental
+author:        Roel van Dijk <vandijk.roel@gmail.com>, Bas van Dijk <v.dijk.bas@gmail.com>
+maintainer:    Roel van Dijk <vandijk.roel@gmail.com>
+copyright:     2009—2011 Roel van Dijk, Bas van Dijk
+license:       BSD3
+license-file:  LICENSE
+category:      Natural Language Processing, Numerical, Text
+synopsis:      Convert numbers to number words
+description:   See the @numerals@ package for numerous examples.
+
+extra-source-files: ./TODO
+                  , ./LICENSE
+
+-------------------------------------------------------------------------------
+
+source-repository head
+  Type: darcs
+  Location: http://code.haskell.org/numerals-base
+
+-------------------------------------------------------------------------------
+
+library
+  hs-source-dirs: src
+  ghc-options: -Wall
+
+  build-depends: base                       >= 3.0.3.1 && < 4.4
+               , base-unicode-symbols       >= 0.1.1   && < 0.3
+               , containers                 >= 0.4     && < 0.5
+               , containers-unicode-symbols >= 0.3     && < 0.4
+               , fingertree                 >= 0.0.1   && < 0.1
+
+  exposed-modules: Text.Numeral
+                 , Text.Numeral.BigNum
+                 , Text.Numeral.Exp
+                 , Text.Numeral.Exp.Classes
+                 , Text.Numeral.Misc
+                 , Text.Numeral.Repr
+                 , Text.Numeral.Rules
+
+-------------------------------------------------------------------------------
+
+test-suite test-numerals
+  type: exitcode-stdio-1.0
+  main-is: test.hs
+  hs-source-dirs: src, test
+  ghc-options: -Wall
+
+  build-depends: base                       >= 3.0.3.1 && < 4.4
+               , base-unicode-symbols       >= 0.1.1   && < 0.3
+               , containers                 >= 0.4     && < 0.5
+               , containers-unicode-symbols >= 0.3     && < 0.4
+               , fingertree                 >= 0.0.1   && < 0.1
+               , HUnit                      >= 1.2.2   && < 1.3
+               , test-framework             >= 0.3.3   && < 0.4
+               , test-framework-hunit       >= 0.2.6   && < 0.3
+
