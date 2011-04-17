@@ -18,8 +18,8 @@ extra-source-files: ./TODO
 -------------------------------------------------------------------------------
 
 source-repository head
-  Type: darcs
-  Location: http://code.haskell.org/numerals-base
+  Type: git
+  Location: git://github.com/roelvandijk/numerals-base.git
 
 -------------------------------------------------------------------------------
 
