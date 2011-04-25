@@ -8,12 +8,12 @@ maintainer:    Roel van Dijk <vandijk.roel@gmail.com>
 copyright:     2009—2011 Roel van Dijk, Bas van Dijk
 license:       BSD3
 license-file:  LICENSE
+homepage:      https://github.com/roelvandijk/numerals-base
+bug-reports:   https://github.com/roelvandijk/numerals-base/issues
 category:      Natural Language Processing, Numerical, Text
 synopsis:      Convert numbers to number words
 description:   See the @numerals@ package for numerous examples.
-
-extra-source-files: ./TODO
-                  , ./LICENSE
+extra-source-files: ./TODO, ./LICENSE
 
 -------------------------------------------------------------------------------
 
