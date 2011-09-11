@@ -19,11 +19,10 @@ import Data.Function ( ($) )
 import Data.Functor  ( (<$>) )
 import Data.Maybe    ( Maybe(Nothing, Just) )
 import Data.Monoid   ( Monoid )
-import Data.String   ( IsString )
-import Prelude       ( Integer )
 
 -- from base-unicode-symbols:
 import Data.Monoid.Unicode ( (⊕) )
+import Prelude.Unicode     ( ℤ )
 
 -- from numerals-base:
 import Text.Numeral.Exp ( Exp(..), Side(L, R), Ctx(..) )
@@ -33,8 +32,8 @@ import Text.Numeral.Exp ( Exp(..), Side(L, R), Ctx(..) )
 -- Structure of numerals
 --------------------------------------------------------------------------------
 
-data Repr s = Repr { reprValue ∷ Integer → Maybe (Ctx Exp → s)
-                   , reprScale ∷ Integer → Integer → Exp → Ctx Exp → Maybe s
+data Repr s = Repr { reprValue ∷ ℤ → Maybe (Ctx Exp → s)
+                   , reprScale ∷ ℤ → ℤ → Exp → Ctx Exp → Maybe s
                    , reprNeg ∷ Maybe (Exp       → Ctx Exp → s)
                    , reprAdd ∷ Maybe (Exp → Exp → Ctx Exp → s)
                    , reprMul ∷ Maybe (Exp → Exp → Ctx Exp → s)
@@ -63,7 +62,7 @@ defaultRepr =
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
-textify ∷ (Monoid s, IsString s) ⇒ Repr s → Exp → Maybe s
+textify ∷ (Monoid s) ⇒ Repr s → Exp → Maybe s
 textify (Repr {..}) e = go CtxEmpty e
     where
       go ctx (Lit n) = ($ ctx) <$> reprValue n

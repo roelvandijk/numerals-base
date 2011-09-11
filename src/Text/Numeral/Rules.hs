@@ -150,8 +150,8 @@ sub ∷ (Integral α, C.Sub β) ⇒ α → Rule α β
 sub val = \f n → liftA2 C.sub (f $ val - n) (f val)
 
 mkStep ∷ (Integral α, C.Lit β, C.Add β, C.Mul β)
-       ⇒ Rule α β -- ^ lit rule
-       → (α → Side → Rule α β) -- ^ add rule
+       ⇒ Rule α β                     -- ^ lit rule
+       → (α → Side → Rule α β)        -- ^ add rule
        → (α → Side → Side → Rule α β) -- ^ mul rule
        → α → α → Side → Side → Rule α β
 mkStep lr ar mr val r aSide mSide
@@ -206,7 +206,7 @@ mulScale1 base offset aSide mSide bigNumRule =
 
 shortScale ∷ (Integral α, C.Scale α, C.Add β, C.Mul β, C.Scale β)
            ⇒ Side → Side → Rule α β → Rule α β
-shortScale  = mulScale 3 3
+shortScale = mulScale 3 3
 
 shortScale1 ∷ (Integral α, C.Scale α, C.Add β, C.Mul β, C.Scale β)
             ⇒ Side → Side → Rule α β → Rule α β

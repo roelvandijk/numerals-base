@@ -27,12 +27,13 @@ import Data.Functor  ( (<$>) )
 import Data.Maybe    ( Maybe(Nothing, Just) )
 import Data.Monoid   ( Monoid )
 import Data.String   ( IsString )
-import Prelude       ( Integral, Integer )
+import Prelude       ( Integral )
 
 -- from base-unicode-symbols:
 import Data.Eq.Unicode     ( (≡) )
 import Data.List.Unicode   ( (∈) )
 import Data.Monoid.Unicode ( (⊕) )
+import Prelude.Unicode     ( ℤ )
 
 -- from containers:
 import qualified Data.Map as M ( Map, fromList, lookup )
@@ -113,8 +114,8 @@ forms t a1 a2 m1 m2 ctx =
 scaleRepr ∷ (IsString s, Monoid s)
           ⇒ s -- ^Postfix for singular names.
           → s -- ^Postfix for plural names.
-          → [(Integer, Ctx Exp → s)]
-          → Integer → Integer → Exp → Ctx Exp → Maybe s
+          → [(ℤ, Ctx Exp → s)]
+          → ℤ → ℤ → Exp → Ctx Exp → Maybe s
 scaleRepr s p syms _ _ e ctx = (⊕ pf) <$> textify repr e
     where
       pf = case ctx of
@@ -129,8 +130,8 @@ pelletierRepr ∷ (IsString s, Monoid s)
               → s -- ^Postfix for singular offset 0 names.
               → s -- ^Postfix for plural offset 3 names.
               → s -- ^Postfix for plural offset 3 names.
-              → [(Integer, Ctx Exp → s)]
-              → Integer → Integer → Exp → Ctx Exp → Maybe s
+              → [(ℤ, Ctx Exp → s)]
+              → ℤ → ℤ → Exp → Ctx Exp → Maybe s
 pelletierRepr s0 p0 s3 p3 syms
               b o e ctx | o ≡ 0 = scaleRepr s0 p0 syms b o e ctx
                         | o ≡ 3 = scaleRepr s3 p3 syms b o e ctx

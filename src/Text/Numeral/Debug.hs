@@ -14,7 +14,8 @@ import Data.Function ( fix )
 import Data.Maybe    ( fromMaybe )
 
 -- from base-unicode-symbols:
-import Data.Monoid.Unicode   ( (⊕) )
+import Data.Monoid.Unicode ( (⊕) )
+import Prelude.Unicode     ( ℤ )
 
 -- from numerals-base:
 import Text.Numeral
@@ -57,7 +58,7 @@ import Text.Show ( Show )
 -- Debug and test stuff
 --------------------------------------------------------------------------------
 
-test ∷ (Integer → Maybe (R.Repr Integer)) → (Integer → Maybe String) → [Integer] → IO ()
+test ∷ (ℤ → Maybe (R.Repr ℤ)) → (ℤ → Maybe String) → [ℤ] → IO ()
 test struct num xs =
     forM_ xs $ \x → do putStr $ (show x) ⊕ " = "
                        case struct x of
@@ -67,7 +68,7 @@ test struct num xs =
                                      putStrLn $ fromMaybe "error" (num x)
 
 -- | Like 'test' but doesn't print the numbers that are converted.
-test2 ∷ (Integer → Maybe (R.Repr Integer)) → (Integer → Maybe String) → [Integer] → IO ()
+test2 ∷ (ℤ → Maybe (R.Repr ℤ)) → (ℤ → Maybe String) → [ℤ] → IO ()
 test2 struct num xs =
     forM_ xs $ \x → case struct x of
                       Nothing → putStrLn "error"
