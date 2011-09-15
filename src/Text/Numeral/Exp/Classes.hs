@@ -1,4 +1,8 @@
-{-# LANGUAGE NoImplicitPrelude, TypeSynonymInstances, UnicodeSyntax #-}
+{-# LANGUAGE NoImplicitPrelude
+           , PackageImports
+           , TypeSynonymInstances
+           , UnicodeSyntax
+  #-}
 
 module Text.Numeral.Exp.Classes
     ( Lit(lit)
@@ -13,11 +17,8 @@ module Text.Numeral.Exp.Classes
 -- Imports
 -------------------------------------------------------------------------------
 
--- from base:
-import Prelude ( (+), (*), (^), subtract, negate, fromInteger )
-
--- from base-unicode-symbols:
-import Prelude.Unicode ( ℤ, (⋅) )
+import "base" Prelude ( (+), (*), (^), subtract, negate, fromInteger )
+import "base-unicode-symbols" Prelude.Unicode ( ℤ, (⋅) )
 
 
 -------------------------------------------------------------------------------

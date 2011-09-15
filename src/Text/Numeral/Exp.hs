@@ -1,10 +1,12 @@
-{-# LANGUAGE NoImplicitPrelude, UnicodeSyntax #-}
+{-# LANGUAGE NoImplicitPrelude
+           , PackageImports
+           , UnicodeSyntax
+  #-}
 
 module Text.Numeral.Exp
     ( Exp(..)
     , eval
     , Side(L, R)
-    , Ctx(..)
     ) where
 
 
@@ -12,16 +14,11 @@ module Text.Numeral.Exp
 -- Imports
 -------------------------------------------------------------------------------
 
--- from base:
-import Data.Eq   ( Eq )
-import Data.Ord  ( Ord )
-import Text.Show ( Show )
-
--- from base-unicode-symbols:
-import Prelude.Unicode ( ℤ )
-
--- from numerals-base:
-import qualified Text.Numeral.Exp.Classes as C
+import "base" Data.Eq   ( Eq )
+import "base" Data.Ord  ( Ord )
+import "base" Text.Show ( Show )
+import "base-unicode-symbols" Prelude.Unicode ( ℤ )
+import qualified "this" Text.Numeral.Exp.Classes as C
 
 
 -------------------------------------------------------------------------------
@@ -83,23 +80,3 @@ eval (Scale b o r) = C.scale b o (eval r)
 data Side = L -- ^ Left.
           | R -- ^ Right.
             deriving Show
-
-
--------------------------------------------------------------------------------
--- Context of expressions
--------------------------------------------------------------------------------
-
--- | A context in which an 'Exp'ression appears.
-data Ctx α   -- | The empty context. Used for top level expressions.
-           = CtxEmpty
-             -- | Negation context.
-           | CtxNeg (Ctx α)
-             -- | Addition context.
-           | CtxAdd Side α (Ctx α)
-             -- | Multiplication context.
-           | CtxMul Side α (Ctx α)
-             -- | Subtraction context.
-           | CtxSub Side α (Ctx α)
-             -- | Scale context.
-           | CtxScale (Ctx α)
-             deriving Show

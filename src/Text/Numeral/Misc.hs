@@ -1,4 +1,8 @@
-{-# LANGUAGE NoImplicitPrelude, OverloadedStrings, UnicodeSyntax #-}
+{-# LANGUAGE NoImplicitPrelude
+           , OverloadedStrings
+           , PackageImports
+           , UnicodeSyntax
+  #-}
 
 module Text.Numeral.Misc where
 
@@ -6,11 +10,9 @@ module Text.Numeral.Misc where
 -- Imports
 --------------------------------------------------------------------------------
 
--- from base:
-import Data.Bool ( otherwise )
-import Data.Ord  ( (<) )
-import Prelude   ( Integral, (+), (^), div, ($!), error )
-
+import "base" Data.Bool ( otherwise )
+import "base" Data.Ord  ( (<) )
+import "base" Prelude   ( Integral, (+), (^), div, ($!), error )
 
 
 --------------------------------------------------------------------------------

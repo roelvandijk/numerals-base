@@ -21,7 +21,10 @@ description:
   The documentation for the "Text.Numeral" module contains an high
   level overview of the package.
   .
-  See the @numerals@ package for numerous examples.
+  If you just want to convert numbers to number words in a specific
+  language you should probably use the @numerals@ package. That
+  package also contains numerous examples on how to use the functions
+  in this package.
 
 extra-source-files: ./TODO, ./README.markdown
 
@@ -48,7 +51,7 @@ library
                  , Text.Numeral.Exp
                  , Text.Numeral.Exp.Classes
                  , Text.Numeral.Misc
-                 , Text.Numeral.Repr
+                 , Text.Numeral.Render
                  , Text.Numeral.Rules
 
 -------------------------------------------------------------------------------

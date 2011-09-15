@@ -1,15 +1,25 @@
 {-# LANGUAGE NoImplicitPrelude
+           , PackageImports
            , UnicodeSyntax
-           , TypeSynonymInstances
   #-}
 
+{-|
+
+Rules to convert numbers to an expression language.
+
+-}
 module Text.Numeral.Rules
-  ( Rule
+  ( -- * The Rule type
+    Rule
+
+    -- * Rule combinators
   , empty, combine
   , when, conditional
 
   , Rules
   , findRule
+
+    -- * Rules
   , pos, checkPos
 
   , lit, lit1
@@ -29,31 +39,24 @@ module Text.Numeral.Rules
 -- Imports
 -------------------------------------------------------------------------------
 
--- from base:
-import Control.Applicative ( liftA2 )
-import Control.Monad       ( (>>=) )
-import Data.Bool           ( Bool, otherwise )
-import Data.Function       ( ($), id, const, flip, fix )
-import Data.Functor        ( (<$>) )
-import Data.List           ( foldr )
-import Data.Maybe          ( Maybe(Nothing, Just) )
-import Data.Ord            ( Ord, (<), (>) )
-import Prelude             ( Integral, fromIntegral
-                           , Num, (-), abs, divMod, div, even
-                           )
-
--- from base-unicode-symbols:
-import Data.Eq.Unicode       ( (≡) )
-import Data.Function.Unicode ( (∘) )
-import Prelude.Unicode       ( (⋅) )
-
--- from numerals-base:
-import qualified Text.Numeral.Exp.Classes as C
-import Text.Numeral.Exp ( Side(L, R) )
-import Text.Numeral.Misc ( intLog )
-
--- from fingertree:
-import qualified Data.IntervalMap.FingerTree as FT
+import "base" Control.Applicative ( liftA2 )
+import "base" Control.Monad       ( (>>=) )
+import "base" Data.Bool           ( Bool, otherwise )
+import "base" Data.Function       ( ($), id, const, flip, fix )
+import "base" Data.Functor        ( (<$>) )
+import "base" Data.List           ( foldr )
+import "base" Data.Maybe          ( Maybe(Nothing, Just) )
+import "base" Data.Ord            ( Ord, (<), (>) )
+import "base" Prelude             ( Integral, fromIntegral
+                                  , Num, (-), abs, divMod, div, even
+                                  )
+import "base-unicode-symbols" Data.Eq.Unicode       ( (≡) )
+import "base-unicode-symbols" Data.Function.Unicode ( (∘) )
+import "base-unicode-symbols" Prelude.Unicode       ( (⋅) )
+import "this"                 Text.Numeral.Exp      ( Side(L, R) )
+import "this"                 Text.Numeral.Misc     ( intLog )
+import qualified "this"       Text.Numeral.Exp.Classes as C
+import qualified "fingertree" Data.IntervalMap.FingerTree as FT
     ( Interval(Interval)
     , IntervalMap, empty, insert
     , search
@@ -61,9 +64,11 @@ import qualified Data.IntervalMap.FingerTree as FT
 
 
 --------------------------------------------------------------------------------
--- Rule type
+-- The Rule type
 --------------------------------------------------------------------------------
 
+-- | A rule on how to convert a number into an expression
+-- language. Notice the similarity with the type of the '$' operator.
 type Rule α β = (α → Maybe β) → (α → Maybe β)
 
 
@@ -76,25 +81,50 @@ type Rule α β = (α → Maybe β) → (α → Maybe β)
 -- idRule ∷ Rule α β
 -- idRule f n = f n
 
+-- | The empty rule always fails.
 empty ∷ Rule α β
 empty _ _ = Nothing
 
-combine ∷ Rule α β → Rule α β → Rule α β
+-- | Tries to apply to first rule, if that fails applies the second
+-- rule.
+--
+-- Law: 'combine' r 'empty' '==' r
+combine ∷ Rule α β -- ^ First rule to try.
+        → Rule α β -- ^ Second rule.
+        → Rule α β
 combine r1 r2 = \f n → case r1 f n of
                          Nothing → r2 f n
                          x       → x
 
-when ∷ (α → Bool) → Rule α β → Rule α β
+-- | Only applies a rule when the predicate holds for the input value,
+-- otherwise returns 'Nothing'.
+when ∷ (α → Bool) -- ^ Predicate on input value.
+     → Rule α β   -- ^ Rule to optionally apply.
+     → Rule α β
 when pred r = \f n → if pred n
                      then r f n
                      else Nothing
 
-conditional ∷ (α → Bool) → Rule α β → Rule α β → Rule α β
+-- | The \'if-then-else\' concept for rules. Applies the first rule
+-- 'when' the predicate holds on the input value, otherwise applies
+-- the second rule.
+conditional ∷ (α → Bool) -- ^ Predicate on input value.
+            → Rule α β -- ^ Rule to apply when predicate holds.
+            → Rule α β -- ^ Rule to apply when predicate does not hold.
+            → Rule α β
 conditional p t e = when p t `combine` e
 
+-- | List of rules combined with an interval of values in which they
+-- must be applied.
 type Rules α β = [((α, α), Rule α β)]
 
-findRule ∷ (Ord α, Num α) ⇒ (α, Rule α β) → [(α, Rule α β)] → α → Rule α β
+-- | Chooses which rule to apply to an input value based on a interval
+-- list of rules.
+findRule ∷ (Ord α, Num α)
+         ⇒ (α, Rule α β)   -- ^ First interval rule.
+         → [(α, Rule α β)] -- ^ Interval rule list.
+         → α               -- ^ Upper bound of the last interval.
+         → Rule α β
 findRule x xs end = \f n → case FT.search n xm of
                              [] → Nothing
                              (_,r):_ → r f n
@@ -103,22 +133,45 @@ findRule x xs end = \f n → case FT.search n xm of
 
 
 --------------------------------------------------------------------------------
--- Useful rules
+-- Rules
 --------------------------------------------------------------------------------
 
+-- |
+--
+-- >>> (pos $ lit $ fix empty) (3 :: Integer) :: Maybe Exp
+-- Just (Lit 3)
+-- >>> (pos $ lit $ fix empty) (-3 :: Integer) :: Maybe Exp
+-- Just (Neg (Lit 3))
 pos ∷ (Ord α, Num α, C.Lit β, C.Neg β) ⇒ Rule α β
 pos f n | n < 0     = C.neg <$> f (abs n)
         | n > 0     = f n
         | otherwise = Just $ C.lit 0
 
+-- |
+--
+-- >>> (pos $ lit $ fix empty) (3 :: Integer) :: Maybe Exp
+-- Just (Lit 3)
+-- >>> (pos $ lit $ fix empty) (-3 :: Integer) :: Maybe Exp
+-- Nothing
 checkPos ∷ (Ord α, Num α, C.Lit β) ⇒ Rule α β
 checkPos f n | n < 0     = Nothing
              | n > 0     = f n
              | otherwise = Just $ C.lit 0
 
+-- | The literal rule. Converts its argument into a 'C.lit'eral
+-- expression.
+--
+-- >>> lit (fix empty) (3 :: Integer) :: Maybe Exp
+-- Just (Lit 3)
 lit ∷ (Integral α, C.Lit β) ⇒ Rule α β
 lit = const $ Just ∘ C.lit ∘ fromIntegral
 
+-- | A variant on the 'lit' rule which always multiplies its argument
+-- with 1. Useful for languages which have numerals of the form \"one
+-- hundred and three\" as opposed to \"hundred and three\".
+--
+-- >>> lit1 (fix empty) (3 :: Integer) :: Maybe Exp
+-- Just (Mul (Lit 1) (Lit 3))
 lit1 ∷ (Integral α, C.Lit β, C.Mul β) ⇒ Rule α β
 lit1 = const $ \n → Just $ C.lit 1 `C.mul` C.lit (fromIntegral n)
 

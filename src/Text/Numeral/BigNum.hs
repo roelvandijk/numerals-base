@@ -1,5 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude
            , OverloadedStrings
+           , PackageImports
            , UnicodeSyntax
   #-}
 
@@ -19,31 +20,22 @@ module Text.Numeral.BigNum
 -- Imports
 -------------------------------------------------------------------------------
 
--- from base:
-import Control.Monad ( (>=>) )
-import Data.Bool     ( otherwise )
-import Data.Function ( ($), const, fix )
-import Data.Functor  ( (<$>) )
-import Data.Maybe    ( Maybe(Nothing, Just) )
-import Data.Monoid   ( Monoid )
-import Data.String   ( IsString )
-import Prelude       ( Integral )
-
--- from base-unicode-symbols:
-import Data.Eq.Unicode     ( (≡) )
-import Data.List.Unicode   ( (∈) )
-import Data.Monoid.Unicode ( (⊕) )
-import Prelude.Unicode     ( ℤ )
-
--- from containers:
-import qualified Data.Map as M ( Map, fromList, lookup )
-
--- from containers-unicode-symbols:
-import Data.Map.Unicode ( (∪) )
-
--- from numerals-base:
-import Text.Numeral
-import qualified Text.Numeral.Exp.Classes as C
+import "base"                       Control.Monad       ( (>=>) )
+import "base"                       Data.Bool           ( otherwise )
+import "base"                       Data.Function       ( ($), const, fix )
+import "base"                       Data.Functor        ( (<$>) )
+import "base"                       Data.Maybe          ( Maybe(Nothing, Just) )
+import "base"                       Data.Monoid         ( Monoid )
+import "base"                       Data.String         ( IsString )
+import "base"                       Prelude             ( Integral )
+import "base-unicode-symbols"       Data.Eq.Unicode     ( (≡) )
+import "base-unicode-symbols"       Data.List.Unicode   ( (∈) )
+import "base-unicode-symbols"       Data.Monoid.Unicode ( (⊕) )
+import "base-unicode-symbols"       Prelude.Unicode     ( ℤ )
+import "containers-unicode-symbols" Data.Map.Unicode    ( (∪) )
+import "this"                       Text.Numeral
+import qualified "containers" Data.Map as M ( Map, fromList, lookup )
+import qualified "this"       Text.Numeral.Exp.Classes as C
 
 
 --------------------------------------------------------------------------------
@@ -51,7 +43,7 @@ import qualified Text.Numeral.Exp.Classes as C
 --------------------------------------------------------------------------------
 
 cardinal ∷ (Monoid s, IsString s, Integral α) ⇒ α → Maybe s
-cardinal = pos (fix rule) >=> textify cardinalRepr
+cardinal = pos (fix rule) >=> render cardinalRepr
 
 rule ∷ (Integral α, C.Lit β, C.Add β, C.Mul β) ⇒ Rule α β
 rule = findRule (   1, lit        )
@@ -116,7 +108,7 @@ scaleRepr ∷ (IsString s, Monoid s)
           → s -- ^Postfix for plural names.
           → [(ℤ, Ctx Exp → s)]
           → ℤ → ℤ → Exp → Ctx Exp → Maybe s
-scaleRepr s p syms _ _ e ctx = (⊕ pf) <$> textify repr e
+scaleRepr s p syms _ _ e ctx = (⊕ pf) <$> render repr e
     where
       pf = case ctx of
              CtxMul _ (Lit 1) _ → s
