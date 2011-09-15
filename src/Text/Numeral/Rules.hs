@@ -63,7 +63,7 @@ import qualified "fingertree" Data.IntervalMap.FingerTree as FT
 --------------------------------------------------------------------------------
 
 -- | A rule on how to convert a number into an expression
--- language. Notice how this type equal to the type of the '$'
+-- language. Notice how this type is equal to the type of the '$'
 -- operator.
 type Rule α β = (α → β) → (α → β)
 

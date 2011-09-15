@@ -28,8 +28,8 @@ import "base-unicode-symbols" Prelude.Unicode ( ℤ, (⋅) )
 -- Exp classes
 -------------------------------------------------------------------------------
 
--- | An unknown value. Something that can not be represented by this
--- language.
+-- | An unknown value. This is used to signal that a value can not be
+-- represented in the expression language.
 --
 -- Law: isUnknown unknown == True
 class Unknown α where

@@ -26,7 +26,7 @@ description:
   package also contains numerous examples on how to use the functions
   in this package.
 
-extra-source-files: ./TODO, ./README.markdown
+extra-source-files: ./TODO.markdown, ./README.markdown
 
 -------------------------------------------------------------------------------
 
