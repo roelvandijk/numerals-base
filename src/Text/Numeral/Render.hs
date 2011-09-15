@@ -38,6 +38,7 @@ import "this"                 Text.Numeral.Exp    ( Exp(..), Side(L, R) )
 render ∷ (Monoid s) ⇒ Repr s → Exp → Maybe s
 render (Repr {..}) e = go CtxEmpty e
     where
+      go _   Unknown = reprUnknown
       go ctx (Lit n) = ($ ctx) <$> reprValue n
       go ctx (Scale b o r) = reprScale b o r ctx
       go ctx (Neg x) = do x' ← go (CtxNeg ctx) x
@@ -71,9 +72,11 @@ render (Repr {..}) e = go CtxEmpty e
 -- 'Exp'ression to a string-like value.
 data Repr s =
     Repr
-    { -- | Renders a literal value. Not necessarily defined for every
+    { -- | Representation for unknown values.
+      reprUnknown ∷ Maybe s
+      -- | Renders a literal value. Not necessarily defined for every
       -- value.
-      reprValue ∷ ℤ → Maybe (Ctx Exp → s)
+    , reprValue ∷ ℤ → Maybe (Ctx Exp → s)
       -- | Renders a step in a scale of large values. The arguments
       -- are in order: base, offset and rank of the step and the
       -- context of the rank. The value represented by the step is 10
@@ -111,7 +114,8 @@ data Repr s =
 -- 'Nothing' or always produce 'Nothing'.
 defaultRepr ∷ (Monoid s) ⇒ Repr s
 defaultRepr =
-    Repr { reprValue = \_       → Nothing
+    Repr { reprUnknown = Nothing
+         , reprValue = \_       → Nothing
          , reprScale = \_ _ _ _ → Nothing
          , reprNeg   = Nothing
          , reprAdd   = Nothing

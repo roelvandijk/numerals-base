@@ -20,19 +20,19 @@ module Text.Numeral.BigNum
 -- Imports
 -------------------------------------------------------------------------------
 
-import "base"                       Control.Monad       ( (>=>) )
-import "base"                       Data.Bool           ( otherwise )
-import "base"                       Data.Function       ( ($), const, fix )
-import "base"                       Data.Functor        ( (<$>) )
-import "base"                       Data.Maybe          ( Maybe(Nothing, Just) )
-import "base"                       Data.Monoid         ( Monoid )
-import "base"                       Data.String         ( IsString )
-import "base"                       Prelude             ( Integral )
-import "base-unicode-symbols"       Data.Eq.Unicode     ( (≡) )
-import "base-unicode-symbols"       Data.List.Unicode   ( (∈) )
-import "base-unicode-symbols"       Data.Monoid.Unicode ( (⊕) )
-import "base-unicode-symbols"       Prelude.Unicode     ( ℤ )
-import "containers-unicode-symbols" Data.Map.Unicode    ( (∪) )
+import "base"                       Data.Bool             ( otherwise )
+import "base"                       Data.Function         ( ($), const, fix )
+import "base"                       Data.Functor          ( (<$>) )
+import "base"                       Data.Maybe            ( Maybe(Nothing, Just) )
+import "base"                       Data.Monoid           ( Monoid )
+import "base"                       Data.String           ( IsString )
+import "base"                       Prelude               ( Integral )
+import "base-unicode-symbols"       Data.Eq.Unicode       ( (≡) )
+import "base-unicode-symbols"       Data.Function.Unicode ( (∘) )
+import "base-unicode-symbols"       Data.List.Unicode     ( (∈) )
+import "base-unicode-symbols"       Data.Monoid.Unicode   ( (⊕) )
+import "base-unicode-symbols"       Prelude.Unicode       ( ℤ )
+import "containers-unicode-symbols" Data.Map.Unicode      ( (∪) )
 import "this"                       Text.Numeral
 import qualified "containers" Data.Map as M ( Map, fromList, lookup )
 import qualified "this"       Text.Numeral.Exp.Classes as C
@@ -43,9 +43,9 @@ import qualified "this"       Text.Numeral.Exp.Classes as C
 --------------------------------------------------------------------------------
 
 cardinal ∷ (Monoid s, IsString s, Integral α) ⇒ α → Maybe s
-cardinal = pos (fix rule) >=> render cardinalRepr
+cardinal = render cardinalRepr ∘ (pos $ fix rule)
 
-rule ∷ (Integral α, C.Lit β, C.Add β, C.Mul β) ⇒ Rule α β
+rule ∷ (Integral α, C.Unknown β, C.Lit β, C.Add β, C.Mul β) ⇒ Rule α β
 rule = findRule (   1, lit        )
               [ (  11, add  10 L  )
               , (  20, mul  10 L L)

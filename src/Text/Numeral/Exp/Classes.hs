@@ -5,7 +5,8 @@
   #-}
 
 module Text.Numeral.Exp.Classes
-    ( Lit(lit)
+    ( Unknown(unknown, isUnknown)
+    , Lit(lit)
     , Neg(neg)
     , Add(add)
     , Mul(mul)
@@ -17,13 +18,23 @@ module Text.Numeral.Exp.Classes
 -- Imports
 -------------------------------------------------------------------------------
 
-import "base" Prelude ( (+), (*), (^), subtract, negate, fromInteger )
+import "base" Data.Bool ( Bool(False) )
+import "base" Data.Function ( const )
+import "base" Prelude ( (+), (*), (^), subtract, negate, fromInteger, error )
 import "base-unicode-symbols" Prelude.Unicode ( ℤ, (⋅) )
 
 
 -------------------------------------------------------------------------------
 -- Exp classes
 -------------------------------------------------------------------------------
+
+-- | An unknown value. Something that can not be represented by this
+-- language.
+--
+-- Law: isUnknown unknown == True
+class Unknown α where
+    unknown ∷ α
+    isUnknown ∷ α → Bool
 
 -- | A literal value.
 --
@@ -82,6 +93,9 @@ infixl 7 `mul`
 -- Integer instances
 -------------------------------------------------------------------------------
 
+instance Unknown ℤ where
+    unknown   = error "unknown"
+    isUnknown = const False
 instance Lit ℤ where lit = fromInteger
 instance Neg ℤ where neg = negate
 instance Add ℤ where add = (+)
