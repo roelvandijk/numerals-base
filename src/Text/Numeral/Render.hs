@@ -8,9 +8,12 @@ module Text.Numeral.Render
     ( -- * Rendering numerals
       render
       -- * Representation of numerals
-    , Repr(..), defaultRepr
+    , Repr(..)
+    , ScaleRepr
+    , defaultRepr
       -- * Context of expressions
     , Ctx(..)
+    , isOutside
     )
     where
 
@@ -19,13 +22,15 @@ module Text.Numeral.Render
 -- Imports
 -------------------------------------------------------------------------------
 
-import "base"                 Data.Function       ( ($) )
-import "base"                 Data.Functor        ( (<$>) )
-import "base"                 Data.Maybe          ( Maybe(Nothing, Just) )
-import "base"                 Data.Monoid         ( Monoid )
+import "base" Data.Bool     ( Bool(False, True), otherwise )
+import "base" Data.Function ( ($) )
+import "base" Data.Functor  ( (<$>) )
+import "base" Data.Maybe    ( Maybe(Nothing, Just) )
+import "base" Data.Monoid   ( Monoid )
+import "base" Text.Show     ( Show )
+import "base-unicode-symbols" Data.Eq.Unicode     ( (≡) )
 import "base-unicode-symbols" Data.Monoid.Unicode ( (⊕) )
 import "base-unicode-symbols" Prelude.Unicode     ( ℤ )
-import "base"                 Text.Show           ( Show )
 import "this"                 Text.Numeral.Exp    ( Exp(..), Side(L, R) )
 
 
@@ -77,11 +82,8 @@ data Repr s =
       -- | Renders a literal value. Not necessarily defined for every
       -- value.
     , reprValue ∷ ℤ → Maybe (Ctx Exp → s)
-      -- | Renders a step in a scale of large values. The arguments
-      -- are in order: base, offset and rank of the step and the
-      -- context of the rank. The value represented by the step is 10
-      -- ^ (rank * base + offset).
-    , reprScale ∷ ℤ → ℤ → Exp → Ctx Exp → Maybe s
+      -- | Renders a step in a scale of large values.
+    , reprScale ∷ ScaleRepr s
       -- | Renders a negation. This concerns the negation itself, not
       -- the thing being negated.
     , reprNeg ∷ Maybe (Exp       → Ctx Exp → s)
@@ -107,6 +109,15 @@ data Repr s =
       -- | Combines a subtraction and the things being subtracted.
     , reprSubCombine ∷ Maybe (s → s → s → s)
     }
+
+-- | Function that renders the representation of a step in a scale of
+-- large values. The value represented by the step is 10 ^ (rank *
+-- base + offset).
+type ScaleRepr s = ℤ -- ^ Base.
+                 → ℤ -- ^ Offset.
+                 → Exp -- ^ Rank.
+                 → Ctx Exp -- ^ Rank context.
+                 → Maybe s
 
 -- | The default representation.
 --
@@ -146,3 +157,27 @@ data Ctx α   -- | The empty context. Used for top level expressions.
              -- | Scale context.
            | CtxScale (Ctx α)
              deriving Show
+
+-- | Checks whether a context is completely on the outside of an
+-- expression, either left or right.
+--
+-- Given the following expression:
+--
+-- @
+-- 'Add' ('Lit' 1000) ('Add' ('Mul' ('Lit' 2) ('Lit' 100)) ('Add' ('Lit' 4) ('Mul' ('Lit' 3) ('Lit' 10))))
+-- @
+--
+-- On the left we have @'Lit' 1000@ and on the right @'Lit' 10@.
+isOutside ∷ Side → Ctx α → Bool
+isOutside s c = go c
+    where
+      go ∷ Ctx α → Bool
+      go CtxEmpty = True
+      go (CtxNeg nc) = go nc
+      go (CtxAdd as _ ac) | as ≡ s = go ac
+                          | otherwise = False
+      go (CtxMul ms _ mc) | ms ≡ s = go mc
+                          | otherwise = False
+      go (CtxSub ss _ sc) | ss ≡ s = go sc
+                          | otherwise = False
+      go (CtxScale sc) = go sc

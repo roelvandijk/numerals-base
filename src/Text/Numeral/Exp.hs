@@ -88,4 +88,4 @@ eval Unknown       = C.unknown
 -- | A side or direction, either 'L'eft or 'R'ight.
 data Side = L -- ^ Left.
           | R -- ^ Right.
-            deriving Show
+            deriving (Eq, Show)

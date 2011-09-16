@@ -11,8 +11,8 @@ module Text.Numeral.BigNum
   , symMap
   , forms
 
-  , scaleRepr
-  , pelletierRepr
+  , scaleRepr, ordScaleRepr
+  , pelletierRepr, ordPelletierRepr
   ) where
 
 
@@ -104,10 +104,10 @@ forms t a1 a2 m1 m2 ctx =
 --------------------------------------------------------------------------------
 
 scaleRepr ∷ (IsString s, Monoid s)
-          ⇒ s -- ^Postfix for singular names.
-          → s -- ^Postfix for plural names.
+          ⇒ s -- ^Postfix for singular cardinal names.
+          → s -- ^Postfix for plural cardinal names.
           → [(ℤ, Ctx Exp → s)]
-          → ℤ → ℤ → Exp → Ctx Exp → Maybe s
+          → ScaleRepr s
 scaleRepr s p syms _ _ e ctx = (⊕ pf) <$> render repr e
     where
       pf = case ctx of
@@ -117,15 +117,53 @@ scaleRepr s p syms _ _ e ctx = (⊕ pf) <$> render repr e
       repr = cardinalRepr { reprValue = \n → M.lookup n syms' }
       syms' = M.fromList syms ∪ symMap
 
+ordScaleRepr ∷ (IsString s, Monoid s)
+          ⇒ s -- ^Postfix for singular cardinal names.
+          → s -- ^Postfix for singular ordinal names.
+          → s -- ^Postfix for plural cardinal names.
+          → s -- ^Postifx for plural ordinal names.
+          → [(ℤ, Ctx Exp → s)]
+          → ScaleRepr s
+ordScaleRepr sc so pc po syms _ _ e ctx = (⊕ pf) <$> render repr e
+    where
+      pf = case ctx of
+             CtxMul _ (Lit 1) _ | outside   → so
+                                | otherwise → sc
+             CtxMul {}          | outside   → po
+                                | otherwise → pc
+             _                  | outside   → so
+                                | otherwise → sc
+      outside = isOutside R ctx
+      repr = cardinalRepr { reprValue = \n → M.lookup n syms' }
+      syms' = M.fromList syms ∪ symMap
+
 pelletierRepr ∷ (IsString s, Monoid s)
-              ⇒ s -- ^Postfix for singular offset 0 names.
-              → s -- ^Postfix for singular offset 0 names.
-              → s -- ^Postfix for plural offset 3 names.
-              → s -- ^Postfix for plural offset 3 names.
+              ⇒ s -- ^Postfix for singular cardinal offset 0 names.
+              → s -- ^Postfix for plural cardinal offset 0 names.
+              → s -- ^Postfix for singular cardinal offset 3 names.
+              → s -- ^Postfix for plural cardinal offset 3 names.
               → [(ℤ, Ctx Exp → s)]
-              → ℤ → ℤ → Exp → Ctx Exp → Maybe s
+              → ScaleRepr s
 pelletierRepr s0 p0 s3 p3 syms
               b o e ctx | o ≡ 0 = scaleRepr s0 p0 syms b o e ctx
                         | o ≡ 3 = scaleRepr s3 p3 syms b o e ctx
                         | otherwise = Nothing
+
+ordPelletierRepr ∷ (IsString s, Monoid s)
+                 ⇒ s -- ^Postfix for singular cardinal offset 0 names.
+                 → s -- ^Postfix for singular ordinal offset 0 names.
+                 → s -- ^Postfix for plural cardinal offset 0 names.
+                 → s -- ^Postfix for plural ordinal offset 0 names.
+                 → s -- ^Postfix for singular cardinal offset 3 names.
+                 → s -- ^Postfix for singular ordinal offset 3 names.
+                 → s -- ^Postfix for plural cardinal offset 3 names.
+                 → s -- ^Postfix for plural ordinal offset 3 names.
+                 → [(ℤ, Ctx Exp → s)]
+                 → ScaleRepr s
+ordPelletierRepr sc0 so0 pc0 po0
+                 sc3 so3 pc3 po3
+                 syms
+                 b o e ctx | o ≡ 0 = ordScaleRepr sc0 so0 pc0 po0 syms b o e ctx
+                           | o ≡ 3 = ordScaleRepr sc3 so3 pc3 po3 syms b o e ctx
+                           | otherwise = Nothing
 
