@@ -15,6 +15,7 @@ module Text.Numeral.Rules
     -- * Rule combinators
   , conditional
   , combine
+  , mapRule
   , findRule
 
     -- * Rules
@@ -93,6 +94,10 @@ combine ∷ (C.Unknown β)
 combine r1 r2 = \f n → case r1 f n of
                          x | C.isUnknown x → r2 f n
                            | otherwise     → x
+
+-- | Transform a value before it is given to a rule.
+mapRule ∷ (α → α) → Rule α β → Rule α β
+mapRule g r = \f n → r f (g n)
 
 -- | Chooses which rule to apply to an input value based on a interval
 -- list of rules.
