@@ -49,22 +49,22 @@ render (Repr {..}) e = go CtxEmpty e
       go ctx (Neg x) = do x' ← go (CtxNeg ctx) x
                           rn ← reprNeg
                           rnc ← reprNegCombine
-                          Just $ rnc (rn x ctx) x'
+                          Just $ rnc (rn x ctx) x' x
       go ctx (Add x y) = do x' ← go (CtxAdd L y ctx) x
                             y' ← go (CtxAdd R x ctx) y
                             ra ← reprAdd
                             rac ← reprAddCombine
-                            Just $ rac (ra x y ctx) x' y'
+                            Just $ rac (ra x y ctx) x' x y' y
       go ctx (Mul x y) = do x' ← go (CtxMul L y ctx) x
                             y' ← go (CtxMul R x ctx) y
                             rm ← reprMul
                             rmc ← reprMulCombine
-                            Just $ rmc (rm x y ctx) x' y'
+                            Just $ rmc (rm x y ctx) x' x y' y
       go ctx (Sub x y) = do x' ← go (CtxSub L y ctx) x
                             y' ← go (CtxSub R x ctx) y
                             rs ← reprSub
                             rsc ← reprSubCombine
-                            Just $ rsc (rs x y ctx) x' y'
+                            Just $ rsc (rs x y ctx) x' x y' y
 
 
 --------------------------------------------------------------------------------
@@ -101,13 +101,13 @@ data Repr s =
       -- | Combines a negation and the thing being negated. For
       -- example: this would combine \"minus\" and \"three\" into
       -- \"minus three\".
-    , reprNegCombine ∷ Maybe (s → s     → s)
+    , reprNegCombine ∷ Maybe (s → s → Exp → s)
       -- | Combines an addition and the things being added.
-    , reprAddCombine ∷ Maybe (s → s → s → s)
+    , reprAddCombine ∷ Maybe (s → s → Exp → s → Exp → s)
       -- | Combines a multiplication and the things being multiplied.
-    , reprMulCombine ∷ Maybe (s → s → s → s)
+    , reprMulCombine ∷ Maybe (s → s → Exp → s → Exp → s)
       -- | Combines a subtraction and the things being subtracted.
-    , reprSubCombine ∷ Maybe (s → s → s → s)
+    , reprSubCombine ∷ Maybe (s → s → Exp → s → Exp → s)
     }
 
 -- | Function that renders the representation of a step in a scale of
@@ -132,10 +132,10 @@ defaultRepr =
          , reprAdd   = Nothing
          , reprMul   = Nothing
          , reprSub   = Nothing
-         , reprNegCombine = Just $ \n x   → n ⊕ x
-         , reprAddCombine = Just $ \a x y → x ⊕ a ⊕ y
-         , reprMulCombine = Just $ \m x y → x ⊕ m ⊕ y
-         , reprSubCombine = Just $ \s x y → x ⊕ s ⊕ y
+         , reprNegCombine = Just $ \n x _     → n ⊕ x
+         , reprAddCombine = Just $ \a x _ y _ → x ⊕ a ⊕ y
+         , reprMulCombine = Just $ \m x _ y _ → x ⊕ m ⊕ y
+         , reprSubCombine = Just $ \s x _ y _ → x ⊕ s ⊕ y
          }
 
 
