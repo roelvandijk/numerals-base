@@ -45,7 +45,6 @@ render (Repr {..}) e = go CtxEmpty e
     where
       go _   Unknown = reprUnknown
       go ctx (Lit n) = ($ ctx) <$> reprValue n
-      go ctx (Scale b o r) = reprScale b o r ctx
       go ctx (Neg x) = do x' ← go (CtxNeg ctx) x
                           rn ← reprNeg
                           rnc ← reprNegCombine
@@ -65,6 +64,9 @@ render (Repr {..}) e = go CtxEmpty e
                             rs ← reprSub
                             rsc ← reprSubCombine
                             Just $ rsc (rs x y ctx) x' x y' y
+      go ctx (Scale b o r) = reprScale b o r ctx
+      go ctx (Dual   x) = go (CtxDual   ctx) x
+      go ctx (Plural x) = go (CtxPlural ctx) x
 
 
 --------------------------------------------------------------------------------
@@ -82,11 +84,9 @@ data Repr s =
       -- | Renders a literal value. Not necessarily defined for every
       -- value.
     , reprValue ∷ ℤ → Maybe (Ctx Exp → s)
-      -- | Renders a step in a scale of large values.
-    , reprScale ∷ ScaleRepr s
       -- | Renders a negation. This concerns the negation itself, not
       -- the thing being negated.
-    , reprNeg ∷ Maybe (Exp       → Ctx Exp → s)
+    , reprNeg ∷ Maybe (Exp → Ctx Exp → s)
       -- | Renders an addition. This concerns the addition itself, not
       -- the things being added. For example: In \"one hundred and
       -- eighty\" this function would be responsible for rendering the
@@ -98,6 +98,8 @@ data Repr s =
       -- | Renders a subtraction. This concerns the subtraction
       -- itself, not the things being subtracted.
     , reprSub ∷ Maybe (Exp → Exp → Ctx Exp → s)
+      -- | Renders a step in a scale of large values.
+    , reprScale ∷ ScaleRepr s
       -- | Combines a negation and the thing being negated. For
       -- example: this would combine \"minus\" and \"three\" into
       -- \"minus three\".
@@ -126,12 +128,12 @@ type ScaleRepr s = ℤ -- ^ Base.
 defaultRepr ∷ (Monoid s) ⇒ Repr s
 defaultRepr =
     Repr { reprUnknown = Nothing
-         , reprValue = \_       → Nothing
-         , reprScale = \_ _ _ _ → Nothing
-         , reprNeg   = Nothing
-         , reprAdd   = Nothing
-         , reprMul   = Nothing
-         , reprSub   = Nothing
+         , reprValue   = \_ → Nothing
+         , reprNeg     = Nothing
+         , reprAdd     = Nothing
+         , reprMul     = Nothing
+         , reprSub     = Nothing
+         , reprScale   = \_ _ _ _ → Nothing
          , reprNegCombine = Just $ \n x _     → n ⊕ x
          , reprAddCombine = Just $ \a x _ y _ → x ⊕ a ⊕ y
          , reprMulCombine = Just $ \m x _ y _ → x ⊕ m ⊕ y
@@ -156,6 +158,10 @@ data Ctx α   -- | The empty context. Used for top level expressions.
            | CtxSub Side α (Ctx α)
              -- | Scale context.
            | CtxScale (Ctx α)
+             -- | Dual context.
+           | CtxDual (Ctx α)
+             -- | Plural context.
+           | CtxPlural (Ctx α)
              deriving Show
 
 -- | Checks whether a context is completely on the outside of an
@@ -180,4 +186,6 @@ isOutside s c = go c
                           | otherwise = False
       go (CtxSub ss _ sc) | ss ≡ s = go sc
                           | otherwise = False
-      go (CtxScale sc) = go sc
+      go (CtxScale  sc) = go sc
+      go (CtxDual   dc) = go dc
+      go (CtxPlural pc) = go pc

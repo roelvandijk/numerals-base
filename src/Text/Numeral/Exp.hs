@@ -37,6 +37,10 @@ data Exp  -- | An unknown value.
          | Sub Exp Exp
            -- | A step in a scale of large values.
          | Scale ℤ ℤ Exp
+           -- | A dual form of an expression.
+         | Dual Exp
+           -- | A plural form of an expression.
+         | Plural Exp
            deriving (Eq, Ord, Show)
 
 infixl 6 `Add`
@@ -60,6 +64,10 @@ instance C.Mul Exp where mul = Mul
 instance C.Sub Exp where sub = Sub
 -- | Precisely the 'Scale' constructor.
 instance C.Scale Exp where scale = Scale
+-- | Precisely the 'Dual' constructor.
+instance C.Dual Exp where dual = Dual
+-- | Precisely the 'Plural' constructor.
+instance C.Plural Exp where plural = Plural
 
 
 -------------------------------------------------------------------------------

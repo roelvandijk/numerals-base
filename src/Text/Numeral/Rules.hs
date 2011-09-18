@@ -20,9 +20,12 @@ module Text.Numeral.Rules
 
     -- * Rules
   , unknown
-  , pos, checkPos
 
   , lit, lit1
+
+  , pos, checkPos
+  , dual, plural
+
   , add
   , mul, mul1
   , sub
@@ -125,28 +128,6 @@ findRule x xs end = \f n → case FT.search n xm of
 unknown ∷ (C.Unknown β) ⇒ Rule α β
 unknown _ _ = C.unknown
 
--- |
---
--- >>> (pos $ lit $ fix unknown) (3 :: Integer) :: Exp
--- Lit 3
--- >>> (pos $ lit $ fix unknown) (-3 :: Integer) :: Exp
--- Neg (Lit 3)
-pos ∷ (Ord α, Num α, C.Lit β, C.Neg β) ⇒ Rule α β
-pos f n | n < 0     = C.neg $ f (abs n)
-        | n > 0     = f n
-        | otherwise = C.lit 0
-
--- |
---
--- >>> (checkPos $ lit $ fix unknown) (3 :: Integer) :: Exp
--- Lit 3
--- >>> (checkPos $ lit $ fix unknown) (-3 :: Integer) :: Exp
--- Unknown
-checkPos ∷ (Ord α, Num α, C.Unknown β, C.Lit β) ⇒ Rule α β
-checkPos f n | n < 0     = C.unknown
-             | n > 0     = f n
-             | otherwise = C.lit 0
-
 -- | The literal rule. Converts its argument into a 'C.lit'eral
 -- expression.
 --
@@ -172,6 +153,42 @@ lit = const $ C.lit ∘ fromIntegral
 -- Mul (Lit 1) (Lit 3)
 lit1 ∷ (Integral α, C.Lit β, C.Mul β) ⇒ Rule α β
 lit1 = const $ \n → C.lit 1 `C.mul` C.lit (fromIntegral n)
+
+-- |
+--
+-- >>> (pos $ lit $ fix unknown) (3 :: Integer) :: Exp
+-- Lit 3
+-- >>> (pos $ lit $ fix unknown) (-3 :: Integer) :: Exp
+-- Neg (Lit 3)
+pos ∷ (Ord α, Num α, C.Lit β, C.Neg β) ⇒ Rule α β
+pos f n | n < 0     = C.neg $ f (abs n)
+        | n > 0     = f n
+        | otherwise = C.lit 0
+
+-- |
+--
+-- >>> (checkPos $ lit $ fix unknown) (3 :: Integer) :: Exp
+-- Lit 3
+-- >>> (checkPos $ lit $ fix unknown) (-3 :: Integer) :: Exp
+-- Unknown
+checkPos ∷ (Ord α, Num α, C.Unknown β, C.Lit β) ⇒ Rule α β
+checkPos f n | n < 0     = C.unknown
+             | n > 0     = f n
+             | otherwise = C.lit 0
+
+-- |
+--
+-- >>> (dual $ lit $ fix unknown) (3 :: Integer) :: Exp
+-- Dual (Lit 3)
+dual ∷ (C.Dual β) ⇒ Rule α β
+dual = (∘) C.dual
+
+-- |
+--
+-- >>> (plural $ lit $ fix unknown) (3 :: Integer) :: Exp
+-- Plural (Lit 3)
+plural ∷ (C.Plural β) ⇒ Rule α β
+plural = (∘) C.plural
 
 -- |
 --
