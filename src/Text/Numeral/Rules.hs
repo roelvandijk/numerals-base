@@ -250,7 +250,7 @@ step1 ∷ (Integral α, C.Unknown β, C.Lit β, C.Add β, C.Mul β)
 step1 = mkStep lit1 add mul1
 
 -- See: http://en.wikipedia.org/wiki/Names_of_large_numbers
-mulScale ∷ (Integral α, C.Scale α, C.Add β, C.Mul β, C.Scale β)
+mulScale ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
          ⇒ α → α → Side → Side → Rule α β → Rule α β
 mulScale base offset aSide mSide bigNumRule =
     \f n → let rank    = (intLog n - offset) `div` base
@@ -264,11 +264,13 @@ mulScale base offset aSide mSide bigNumRule =
                     | otherwise = (flipIfR mSide C.mul)
                                   (f m)
                                   scale'
-           in if a ≡ 0
-              then mval
-              else (flipIfR aSide C.add) (f a) mval
+           in if C.isUnknown rankExp
+              then C.unknown
+              else if a ≡ 0
+                   then mval
+                   else (flipIfR aSide C.add) (f a) mval
 
-mulScale1 ∷ (Integral α, C.Scale α, C.Add β, C.Mul β, C.Scale β)
+mulScale1 ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
           ⇒ α → α → Side → Side → Rule α β → Rule α β
 mulScale1 base offset aSide mSide bigNumRule =
     \f n → let rank    = (intLog n - offset) `div` base
@@ -280,34 +282,36 @@ mulScale1 base offset aSide mSide bigNumRule =
                mval    = (flipIfR mSide C.mul)
                          (f m)
                          (C.scale base' offset' rankExp)
-           in if a ≡ 0
-              then mval
-              else (flipIfR aSide C.add) (f a) mval
+           in if C.isUnknown rankExp
+              then C.unknown
+              else if a ≡ 0
+                   then mval
+                   else (flipIfR aSide C.add) (f a) mval
 
-shortScale ∷ (Integral α, C.Scale α, C.Add β, C.Mul β, C.Scale β)
+shortScale ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
            ⇒ Side → Side → Rule α β → Rule α β
 shortScale = mulScale 3 3
 
-shortScale1 ∷ (Integral α, C.Scale α, C.Add β, C.Mul β, C.Scale β)
+shortScale1 ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
             ⇒ Side → Side → Rule α β → Rule α β
 shortScale1 = mulScale1 3 3
 
-longScale ∷ (Integral α, C.Scale α, C.Add β, C.Mul β, C.Scale β)
+longScale ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
           ⇒ Side → Side → Rule α β → Rule α β
 longScale = mulScale 6 0
 
-longScale1 ∷ (Integral α, C.Scale α, C.Add β, C.Mul β, C.Scale β)
+longScale1 ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
            ⇒ Side → Side → Rule α β → Rule α β
 longScale1 = mulScale1 6 0
 
-pelletierScale ∷ (Integral α, C.Scale α, C.Add β, C.Mul β, C.Scale β)
+pelletierScale ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
                 ⇒ Side → Side → Rule α β → Rule α β
 pelletierScale aSide mSide bigNumRule =
     conditional (\n → even $ intLog n `div` 3)
                 (mulScale 6 0 aSide mSide bigNumRule)
                 (mulScale 6 3 aSide mSide bigNumRule)
 
-pelletierScale1 ∷ (Integral α, C.Scale α, C.Add β, C.Mul β, C.Scale β)
+pelletierScale1 ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
                 ⇒ Side → Side → Rule α β → Rule α β
 pelletierScale1 aSide mSide bigNumRule =
     conditional (\n → even $ intLog n `div` 3)
