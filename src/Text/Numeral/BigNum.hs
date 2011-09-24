@@ -23,13 +23,13 @@ module Text.Numeral.BigNum
 -- Imports
 -------------------------------------------------------------------------------
 
-import "base"                       Data.Bool             ( otherwise )
-import "base"                       Data.Function         ( ($), const, fix )
-import "base"                       Data.Functor          ( (<$>) )
-import "base"                       Data.Maybe            ( Maybe(Nothing, Just) )
-import "base"                       Data.Monoid           ( Monoid )
-import "base"                       Data.String           ( IsString )
-import "base"                       Prelude               ( Integral )
+import "base" Data.Bool     ( otherwise )
+import "base" Data.Function ( ($), const, fix )
+import "base" Data.Functor  ( (<$>) )
+import "base" Data.Maybe    ( Maybe(Nothing, Just) )
+import "base" Data.Monoid   ( Monoid )
+import "base" Data.String   ( IsString )
+import "base" Prelude       ( Integral, (-) )
 import "base-unicode-symbols"       Data.Eq.Unicode       ( (≡) )
 import "base-unicode-symbols"       Data.Function.Unicode ( (∘) )
 import "base-unicode-symbols"       Data.List.Unicode     ( (∈) )
@@ -37,6 +37,7 @@ import "base-unicode-symbols"       Data.Monoid.Unicode   ( (⊕) )
 import "base-unicode-symbols"       Prelude.Unicode       ( ℤ )
 import "containers-unicode-symbols" Data.Map.Unicode      ( (∪) )
 import "this"                       Text.Numeral
+import "this"                       Text.Numeral.Misc     ( dec )
 import qualified "containers" Data.Map as M ( Map, fromList, lookup )
 import qualified "this"       Text.Numeral.Exp.Classes as C
 
@@ -49,15 +50,17 @@ cardinal ∷ (Monoid s, IsString s, Integral α) ⇒ α → Maybe s
 cardinal = render cardinalRepr ∘ (pos $ fix rule)
 
 rule ∷ (Integral α, C.Unknown β, C.Lit β, C.Add β, C.Mul β) ⇒ Rule α β
-rule = findRule (   1, lit        )
-              [ (  11, add  10 L  )
-              , (  20, mul  10 L L)
-              , ( 100, lit        )
-              , ( 101, add 100 L  )
-              , ( 200, mul 100 R L)
-              , (1000, lit        )
+rule = findRule (   1, lit         )
+              [ (  11, add   10 L  )
+              , (  20, mul   10 L L)
+              , ( 100, lit         )
+              , ( 101, add  100 L  )
+              , ( 200, mul  100 R L)
+              , (1000, lit         )
+              , (1001, add 1000 L  )
+              , (2000, mul 1000 R L)
               ]
-                 1000
+                (dec 4 - 1)
 
 cardinalRepr ∷ (Monoid s, IsString s) ⇒ Repr s
 cardinalRepr =
@@ -90,7 +93,6 @@ symMap = M.fromList
                         _                 → "cent"
            )
          , (1000, const "millin")
-         , (10000, const "myr")
          ]
 
 forms ∷ s → s → s → s → s → Ctx Exp → s
@@ -98,8 +100,8 @@ forms t a1 a2 m1 m2 ctx =
     case ctx of
       CtxAdd _ (Lit 10)  _ → a1
       CtxAdd {}            → a2
-      CtxMul _ (Lit 100) _ → m2
-      CtxMul {}            → m1
+      CtxMul _ (Lit 10)  _ → m1
+      CtxMul {}            → m2
       _                    → t
 
 --------------------------------------------------------------------------------
