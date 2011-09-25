@@ -1,4 +1,5 @@
-{-# LANGUAGE NoImplicitPrelude
+{-# LANGUAGE MagicHash
+           , NoImplicitPrelude
            , OverloadedStrings
            , PackageImports
            , UnicodeSyntax
@@ -10,10 +11,10 @@ module Text.Numeral.Misc where
 -- Imports
 --------------------------------------------------------------------------------
 
-import "base" Data.Bool ( otherwise )
-import "base" Data.Ord  ( (<) )
-import "base" Prelude   ( Integral, (+), (^), div, ($!), error )
-
+import "base" Data.Function ( ($) )
+import "base" GHC.Exts      ( Int(I#) )
+import "base" Prelude       ( Integral, fromIntegral, toInteger, (^) )
+import "integer-gmp" GHC.Integer.Logarithms ( integerLogBase# )
 
 --------------------------------------------------------------------------------
 -- Misc
@@ -23,15 +24,8 @@ import "base" Prelude   ( Integral, (+), (^), div, ($!), error )
 dec ∷ (Integral α) ⇒ α → α
 dec = (10 ^)
 
--- ^ The (base 10) logarithm of an integral value.
+-- ^ The (base 10) logarithm of an integral value. Note that the
+-- result must be able to fit in an ordinary Int value. This means the
+-- maximum input value is 10 ^ (maxBound ∷ Int).
 intLog ∷ (Integral α) ⇒ α → α
-intLog x | x < 0 = error "intLog: undefined for negative numbers"
-         | otherwise = go x 0
-    where
-      go n acc = case n `div` 10 of
-                   0 → acc
-                   1 → acc + 1
-                   q → go q $! acc + 1
-
--- prop_intLog e = intLog (10^e) ≡ e
-
+intLog x = fromIntegral $ I# $ integerLogBase# 10 (toInteger x)
