@@ -45,7 +45,9 @@ library
                , containers                 >= 0.4     && < 0.5
                , containers-unicode-symbols >= 0.3     && < 0.4
                , fingertree                 >= 0.0.1   && < 0.1
-               , integer-gmp                >= 0.3     && < 0.4
+
+  if impl(ghc >= 7.2.1)
+    build-depends: integer-gmp >= 0.3 && < 0.4
 
   exposed-modules: Text.Numeral
                  , Text.Numeral.BigNum
