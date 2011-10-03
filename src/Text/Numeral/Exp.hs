@@ -1,80 +1,134 @@
 {-# LANGUAGE NoImplicitPrelude
            , PackageImports
+           , TypeFamilies
+           , TypeSynonymInstances
            , UnicodeSyntax
   #-}
 
-module Text.Numeral.Exp ( Exp(..), Side(L, R) ) where
-
+module Text.Numeral.Exp
+    ( Unknown(unknown, isUnknown)
+    , Lit(lit)
+    , Neg(neg)
+    , Add(add)
+    , Mul(mul)
+    , Sub(sub)
+    , Scale(scale)
+    , Dual(dual)
+    , Plural(plural)
+    , Inflection(..)
+    ) where
 
 -------------------------------------------------------------------------------
 -- Imports
 -------------------------------------------------------------------------------
 
-import "base" Data.Bool ( Bool(False, True) )
-import "base" Data.Eq   ( Eq )
-import "base" Data.Ord  ( Ord )
-import "base" Text.Show ( Show )
-import "base-unicode-symbols" Prelude.Unicode ( ℤ )
-import qualified "this" Text.Numeral.Exp.Classes as C
+import "base" Data.Bool ( Bool(False) )
+import "base" Data.Function ( const )
+import "base" Prelude ( (+), (*), (^), subtract, negate, fromInteger, error )
+import "base-unicode-symbols" Prelude.Unicode ( ℤ, (⋅) )
 
 
 -------------------------------------------------------------------------------
--- Exp datatype
+-- Expressions
 -------------------------------------------------------------------------------
 
--- | An expression that represents the structure of a numeral.
-data Exp  -- | An unknown value.
-         = Unknown
-          -- | A literal value.
-         | Lit ℤ
-           -- | Negation of an expression.
-         | Neg Exp
-           -- | Addition of two expressions.
-         | Add Exp Exp
-           -- | Multiplication of two expressions.
-         | Mul Exp Exp
-           -- | One expression subtracted from another expression.
-         | Sub Exp Exp
-           -- | A step in a scale of large values.
-         | Scale ℤ ℤ Exp
-           -- | A dual form of an expression.
-         | Dual Exp
-           -- | A plural form of an expression.
-         | Plural Exp
-           deriving (Eq, Ord, Show)
+-- | An unknown value. This is used to signal that a value can not be
+-- represented in the expression language.
+--
+-- Law: isUnknown unknown == True
+class Unknown α where
+    unknown ∷ α
+    isUnknown ∷ α → Bool
 
-infixl 6 `Add`
-infixl 6 `Sub`
-infixl 7 `Mul`
+-- | A literal value.
+--
+-- Example in English:
+--
+-- > "three" = lit 3
+class Lit α where lit ∷ ℤ → α
 
--- | Precisely the 'Unknown' constructor.
-instance C.Unknown Exp where
-    unknown = Unknown
-    isUnknown Unknown = True
-    isUnknown _       = False
--- | Precisely the 'Lit' constructor.
-instance C.Lit Exp where lit = Lit
--- | Precisely the 'Neg' constructor.
-instance C.Neg Exp where neg = Neg
--- | Precisely the 'Add' constructor.
-instance C.Add Exp where add = Add
--- | Precisely the 'Mul' constructor.
-instance C.Mul Exp where mul = Mul
--- | Precisely the 'Sub' constructor.
-instance C.Sub Exp where sub = Sub
--- | Precisely the 'Scale' constructor.
-instance C.Scale Exp where scale = Scale
--- | Precisely the 'Dual' constructor.
-instance C.Dual Exp where dual = Dual
--- | Precisely the 'Plural' constructor.
-instance C.Plural Exp where plural = Plural
+-- | Negation of a value.
+--
+-- Example in English:
+--
+-- > "minus two" = neg (lit 2)
+class Neg α where neg ∷ α → α
+
+-- | Addition of two values.
+--
+-- Example in English:
+--
+-- > "fifteen" = lit 5 `add` lit 10
+class Add α where add ∷ α → α → α
+
+-- | Multiplication of two values.
+--
+-- Example in English:
+--
+-- > "thirty" = lit 3 `mul` lit 10
+class Mul α where mul ∷ α → α → α
+
+-- | One value subtracted from another value.
+--
+-- Example in Latin:
+--
+-- > "duodēvīgintī" = lit 2 `sub` (lit 2 `mul` lit 10)
+class Sub α where sub ∷ α → α → α
+
+-- | A step in a scale of large values.
+--
+-- Should be interpreted as @10 ^ (rank * base + offset)@.
+--
+-- Example in English:
+--
+-- > "quadrillion" = scale 3 3 4
+class Scale α where
+    scale ∷ ℤ -- ^ Base.
+          → ℤ -- ^ Offset.
+          → α -- ^ Rank.
+          → α
+
+-- | A dual of a value.
+--
+-- This is used in some languages that express some values as the dual
+-- of a smaller value. For instance, in Hebrew the number 20 is
+-- expressed as the dual of 10.
+class Dual α where dual ∷ α → α
+
+-- | A plural of a value.
+--
+-- This is used in some languages that express some values as the
+-- plural of a smaller value. For instance, in Hebrew the numbers
+-- [30,40..90] are expressed as the plurals of [3..9].
+class Plural α where plural ∷ α → α
+
+-- | A change of inflection.
+--
+-- This is used in a language like Spanish where the inflection of a
+-- number word is not always constant. Specifically, in Spanish, large
+-- number names always have the masculine gender. So 'millón',
+-- 'billón' and the like are all masculine. This can result in the
+-- following number word: 10000001 = "un (masculine) millón una
+-- (feminine)"
+class Inflection α where
+    type Inf α
+    inflection ∷ (Inf α → Inf α) → α → α
+
+infixl 6 `add`
+infixl 6 `sub`
+infixl 7 `mul`
 
 
 -------------------------------------------------------------------------------
--- Side
+-- Integer instances
 -------------------------------------------------------------------------------
 
--- | A side or direction, either 'L'eft or 'R'ight.
-data Side = L -- ^ Left.
-          | R -- ^ Right.
-            deriving (Eq, Show)
+instance Unknown ℤ where
+    unknown   = error "unknown"
+    isUnknown = const False
+instance Lit ℤ where lit = fromInteger
+instance Neg ℤ where neg = negate
+instance Add ℤ where add = (+)
+instance Mul ℤ where mul = (*)
+instance Sub ℤ where sub = subtract
+instance Scale ℤ where scale b o r = 10 ^ (r⋅b + o)

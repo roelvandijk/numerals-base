@@ -52,7 +52,9 @@ library
   exposed-modules: Text.Numeral
                  , Text.Numeral.BigNum
                  , Text.Numeral.Exp
-                 , Text.Numeral.Exp.Classes
+                 , Text.Numeral.Exp.Reified
+                 , Text.Numeral.Grammar
+                 , Text.Numeral.Grammar.Reified
                  , Text.Numeral.Misc
                  , Text.Numeral.Render
                  , Text.Numeral.Rules

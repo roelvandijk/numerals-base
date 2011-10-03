@@ -25,6 +25,7 @@ module Text.Numeral.Rules
 
   , pos, checkPos
   , dual, plural
+  , inflection
 
   , add
   , mul, mul1
@@ -52,9 +53,9 @@ import "base" Prelude             ( Integral, fromIntegral
 import "base-unicode-symbols" Data.Eq.Unicode       ( (≡) )
 import "base-unicode-symbols" Data.Function.Unicode ( (∘) )
 import "base-unicode-symbols" Prelude.Unicode       ( (⋅) )
-import "this"                 Text.Numeral.Exp      ( Side(L, R) )
+import "this"                 Text.Numeral.Exp.Reified ( Side(L, R) )
 import "this"                 Text.Numeral.Misc     ( intLog )
-import qualified "this"       Text.Numeral.Exp.Classes as C
+import qualified "this"       Text.Numeral.Exp as E
 import qualified "fingertree" Data.IntervalMap.FingerTree as FT
     ( Interval(Interval)
     , IntervalMap, empty, insert
@@ -88,14 +89,14 @@ conditional p t e = \f n → if p n
                            then t f n
                            else e f n
 
--- | Tries to apply the first rule, if that produces an 'C.unknown'
+-- | Tries to apply the first rule, if that produces an 'E.unknown'
 -- value it applies the second rule.
-combine ∷ (C.Unknown β)
+combine ∷ (E.Unknown β)
         ⇒ Rule α β
         → Rule α β
         → Rule α β
 combine r1 r2 = \f n → case r1 f n of
-                         x | C.isUnknown x → r2 f n
+                         x | E.isUnknown x → r2 f n
                            | otherwise     → x
 
 -- | Transform a value before it is given to a rule.
@@ -104,13 +105,13 @@ mapRule g r = \f n → r f (g n)
 
 -- | Chooses which rule to apply to an input value based on a interval
 -- list of rules.
-findRule ∷ (Ord α, Num α, C.Unknown β)
+findRule ∷ (Ord α, Num α, E.Unknown β)
          ⇒ (α, Rule α β)   -- ^ First interval rule.
          → [(α, Rule α β)] -- ^ Interval rule list.
          → α               -- ^ Upper bound of the last interval.
          → Rule α β
 findRule x xs end = \f n → case FT.search n xm of
-                             [] → C.unknown
+                             [] → E.unknown
                              (_,r):_ → r f n
     where
       xm = mkIntervalMap $ mkIntervalList x xs end
@@ -121,14 +122,14 @@ findRule x xs end = \f n → case FT.search n xm of
 --------------------------------------------------------------------------------
 
 -- | A rule that always fails to convert a value. It constantly
--- produces the 'C.unknown' value.
+-- produces the 'E.unknown' value.
 --
 -- >>> (fix unknown) (3 :: Integer) :: Exp
 -- Unknown
-unknown ∷ (C.Unknown β) ⇒ Rule α β
-unknown _ _ = C.unknown
+unknown ∷ (E.Unknown β) ⇒ Rule α β
+unknown _ _ = E.unknown
 
--- | The literal rule. Converts its argument into a 'C.lit'eral
+-- | The literal rule. Converts its argument into a 'E.lit'eral
 -- expression.
 --
 -- >>> lit (fix unknown) (3 :: Integer) :: Exp
@@ -142,8 +143,8 @@ unknown _ _ = C.unknown
 -- Lit 3
 -- >>> (fix lit) (3 :: Integer) :: Exp
 -- Lit 3
-lit ∷ (Integral α, C.Lit β) ⇒ Rule α β
-lit = const $ C.lit ∘ fromIntegral
+lit ∷ (Integral α, E.Lit β) ⇒ Rule α β
+lit = const $ E.lit ∘ fromIntegral
 
 -- | A variant on the 'lit' rule which always multiplies its argument
 -- with 1. Useful for languages which have numerals of the form \"one
@@ -151,8 +152,8 @@ lit = const $ C.lit ∘ fromIntegral
 --
 -- >>> lit1 (fix unknown) (3 :: Integer) :: Exp
 -- Mul (Lit 1) (Lit 3)
-lit1 ∷ (Integral α, C.Lit β, C.Mul β) ⇒ Rule α β
-lit1 = const $ \n → C.lit 1 `C.mul` C.lit (fromIntegral n)
+lit1 ∷ (Integral α, E.Lit β, E.Mul β) ⇒ Rule α β
+lit1 = const $ \n → E.lit 1 `E.mul` E.lit (fromIntegral n)
 
 -- |
 --
@@ -160,10 +161,10 @@ lit1 = const $ \n → C.lit 1 `C.mul` C.lit (fromIntegral n)
 -- Lit 3
 -- >>> (pos $ lit $ fix unknown) (-3 :: Integer) :: Exp
 -- Neg (Lit 3)
-pos ∷ (Ord α, Num α, C.Lit β, C.Neg β) ⇒ Rule α β
-pos f n | n < 0     = C.neg $ f (abs n)
+pos ∷ (Ord α, Num α, E.Lit β, E.Neg β) ⇒ Rule α β
+pos f n | n < 0     = E.neg $ f (abs n)
         | n > 0     = f n
-        | otherwise = C.lit 0
+        | otherwise = E.lit 0
 
 -- |
 --
@@ -171,148 +172,185 @@ pos f n | n < 0     = C.neg $ f (abs n)
 -- Lit 3
 -- >>> (checkPos $ lit $ fix unknown) (-3 :: Integer) :: Exp
 -- Unknown
-checkPos ∷ (Ord α, Num α, C.Unknown β, C.Lit β) ⇒ Rule α β
-checkPos f n | n < 0     = C.unknown
+checkPos ∷ (Ord α, Num α, E.Unknown β, E.Lit β) ⇒ Rule α β
+checkPos f n | n < 0     = E.unknown
              | n > 0     = f n
-             | otherwise = C.lit 0
+             | otherwise = E.lit 0
 
 -- |
 --
 -- >>> (dual $ lit $ fix unknown) (3 :: Integer) :: Exp
 -- Dual (Lit 3)
-dual ∷ (C.Dual β) ⇒ Rule α β
-dual = (∘) C.dual
+dual ∷ (E.Dual β) ⇒ Rule α β
+dual = (∘) E.dual
 
 -- |
 --
 -- >>> (plural $ lit $ fix unknown) (3 :: Integer) :: Exp
 -- Plural (Lit 3)
-plural ∷ (C.Plural β) ⇒ Rule α β
-plural = (∘) C.plural
+plural ∷ (E.Plural β) ⇒ Rule α β
+plural = (∘) E.plural
+
+-- | Changes the inflection of a subexpression.
+inflection ∷ (E.Inflection β) ⇒ (E.Inf β → E.Inf β) → Rule α β
+inflection changeInf = \f n → E.inflection changeInf $ f n
 
 -- |
 --
 -- >>> (add 10 L $ lit $ fix unknown) (13 :: Integer) :: Exp
 -- Add (Lit 3) (Lit 10)
-add ∷ (Num α, C.Add β) ⇒ α → Side → Rule α β
-add val s = \f n → (flipIfR s C.add) (f $ n - val) (f val)
+add ∷ (Num α, E.Add β) ⇒ α → Side → Rule α β
+add val s = \f n → (flipIfR s E.add) (f $ n - val) (f val)
 
 -- |
 --
 -- >>> (mul 10 R L $ lit $ fix unknown) (42 :: Integer) :: Exp
 -- Add (Mul (Lit 4) (Lit 10)) (Lit 2)
-mul ∷ (Integral α, C.Add β, C.Mul β) ⇒ α → Side → Side → Rule α β
+mul ∷ (Integral α, E.Add β, E.Mul β) ⇒ α → Side → Side → Rule α β
 mul val aSide mSide =
     \f n → let (m, a) = n `divMod` val
-               mval = (flipIfR mSide C.mul) (f m) (f val)
+               mval = (flipIfR mSide E.mul) (f m) (f val)
            in if a ≡ 0
               then mval
-              else (flipIfR aSide C.add) (f a) mval
+              else (flipIfR aSide E.add) (f a) mval
 
-mul1 ∷ (Integral α, C.Lit β, C.Add β, C.Mul β)
+mul1 ∷ (Integral α, E.Lit β, E.Add β, E.Mul β)
      ⇒ α → Side → Side → Rule α β
 mul1 val aSide mSide =
     \f n → let (m, a) = n `divMod` val
                mval = if m ≡ 1
-                      then C.lit 1 ⊡ C.lit (fromIntegral val)
-                      else f m ⊡ C.lit (fromIntegral val)
+                      then E.lit 1 ⊡ E.lit (fromIntegral val)
+                      else f m ⊡ E.lit (fromIntegral val)
            in if a ≡ 0
               then mval
-              else (flipIfR aSide C.add) (f a) mval
+              else (flipIfR aSide E.add) (f a) mval
   where
-     (⊡) = flipIfR mSide C.mul
+     (⊡) = flipIfR mSide E.mul
 
 -- |
 --
 -- >>> (sub 20 $ lit $ fix unknown) (18 :: Integer) :: Exp
 -- Sub (Lit 2) (Lit 20)
-sub ∷ (Integral α, C.Sub β) ⇒ α → Rule α β
-sub val = \f n → C.sub (f $ val - n) (f val)
+sub ∷ (Integral α, E.Sub β) ⇒ α → Rule α β
+sub val = \f n → E.sub (f $ val - n) (f val)
 
-mkStep ∷ (Integral α, C.Unknown β, C.Lit β, C.Add β, C.Mul β)
+mkStep ∷ (Integral α, E.Unknown β, E.Lit β, E.Add β, E.Mul β)
        ⇒ Rule α β                     -- ^ lit rule
        → (α → Side → Rule α β)        -- ^ add rule
        → (α → Side → Side → Rule α β) -- ^ mul rule
        → α → α → Side → Side → Rule α β
 mkStep lr ar mr val r aSide mSide
-       f n | n < val   = C.unknown
+       f n | n < val   = E.unknown
            | n ≡ val   = lr                 f n
            | n < val⋅2 = ar val aSide       f n
            | n < val⋅r = mr val aSide mSide f n
-           | otherwise = C.unknown
+           | otherwise = E.unknown
 
-step ∷ (Integral α, C.Unknown β, C.Lit β, C.Add β, C.Mul β)
+step ∷ (Integral α, E.Unknown β, E.Lit β, E.Add β, E.Mul β)
      ⇒ α → α → Side → Side → Rule α β
 step = mkStep lit add mul
 
-step1 ∷ (Integral α, C.Unknown β, C.Lit β, C.Add β, C.Mul β)
+step1 ∷ (Integral α, E.Unknown β, E.Lit β, E.Add β, E.Mul β)
       ⇒ α → α → Side → Side → Rule α β
 step1 = mkStep lit1 add mul1
 
+-- TODO: mulScale must use inflection for Spanish
+-- TODO: parametrise mulScale with add and mul rules.
+-- TODO: the user can then replace add and mul with an inflection rule.
+
 -- See: http://en.wikipedia.org/wiki/Names_of_large_numbers
-mulScale ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
-         ⇒ α → α → Side → Side → Rule α β → Rule α β
+mulScale ∷ (Integral α, E.Scale α, E.Unknown β, E.Add β, E.Mul β, E.Scale β)
+         ⇒ α        -- ^ Base.
+         → α        -- ^ Offset.
+         → Side     -- ^ Add side.
+         → Side     -- ^ Mul side.
+         → Rule α β -- ^ Big num rule.
+         → Rule α β
 mulScale base offset aSide mSide bigNumRule =
     \f n → let rank    = (intLog n - offset) `div` base
                base'   = fromIntegral base
                offset' = fromIntegral offset
                rank'   = fromIntegral rank
                rankExp = (fix bigNumRule) rank
-               (m, a)  = n `divMod` C.scale base' offset' rank'
-               scale'  = C.scale base' offset' rankExp
+               (m, a)  = n `divMod` E.scale base' offset' rank'
+               scale'  = E.scale base' offset' rankExp
                mval | m ≡ 1     = scale'
-                    | otherwise = (flipIfR mSide C.mul)
+                    | otherwise = (flipIfR mSide E.mul)
                                   (f m)
                                   scale'
-           in if C.isUnknown rankExp
-              then C.unknown
+           in if E.isUnknown rankExp
+              then E.unknown
               else if a ≡ 0
                    then mval
-                   else (flipIfR aSide C.add) (f a) mval
+                   else (flipIfR aSide E.add) (f a) mval
 
-mulScale1 ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
-          ⇒ α → α → Side → Side → Rule α β → Rule α β
+mulScale1 ∷ (Integral α, E.Scale α, E.Unknown β, E.Add β, E.Mul β, E.Scale β)
+          ⇒ α        -- ^ Base.
+          → α        -- ^ Offset.
+          → Side     -- ^ Add side.
+          → Side     -- ^ Mul side.
+          → Rule α β -- ^ Big num rule.
+          → Rule α β
 mulScale1 base offset aSide mSide bigNumRule =
     \f n → let rank    = (intLog n - offset) `div` base
                base'   = fromIntegral base
                offset' = fromIntegral offset
                rank'   = fromIntegral rank
                rankExp = (fix bigNumRule) rank
-               (m, a)  = n `divMod` C.scale base' offset' rank'
-               mval    = (flipIfR mSide C.mul)
+               (m, a)  = n `divMod` E.scale base' offset' rank'
+               scale'  = E.scale base' offset' rankExp
+               mval    = (flipIfR mSide E.mul)
                          (f m)
-                         (C.scale base' offset' rankExp)
-           in if C.isUnknown rankExp
-              then C.unknown
+                         scale'
+           in if E.isUnknown rankExp
+              then E.unknown
               else if a ≡ 0
                    then mval
-                   else (flipIfR aSide C.add) (f a) mval
+                   else (flipIfR aSide E.add) (f a) mval
 
-shortScale ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
-           ⇒ Side → Side → Rule α β → Rule α β
+shortScale ∷ (Integral α, E.Scale α, E.Unknown β, E.Add β, E.Mul β, E.Scale β)
+           ⇒ Side     -- ^ Add side.
+           → Side     -- ^ Mul side.
+           → Rule α β -- ^ Big num rule.
+           → Rule α β
 shortScale = mulScale 3 3
 
-shortScale1 ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
-            ⇒ Side → Side → Rule α β → Rule α β
+shortScale1 ∷ (Integral α, E.Scale α, E.Unknown β, E.Add β, E.Mul β, E.Scale β)
+            ⇒ Side     -- ^ Add side.
+            → Side     -- ^ Mul side.
+            → Rule α β -- ^ Big num rule.
+            → Rule α β
 shortScale1 = mulScale1 3 3
 
-longScale ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
-          ⇒ Side → Side → Rule α β → Rule α β
+longScale ∷ (Integral α, E.Scale α, E.Unknown β, E.Add β, E.Mul β, E.Scale β)
+          ⇒ Side     -- ^ Add side.
+          → Side     -- ^ Mul side.
+          → Rule α β -- ^ Big num rule.
+          → Rule α β
 longScale = mulScale 6 0
 
-longScale1 ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
-           ⇒ Side → Side → Rule α β → Rule α β
+longScale1 ∷ (Integral α, E.Scale α, E.Unknown β, E.Add β, E.Mul β, E.Scale β)
+           ⇒ Side     -- ^ Add side.
+           → Side     -- ^ Mul side.
+           → Rule α β -- ^ Big num rule.
+           → Rule α β
 longScale1 = mulScale1 6 0
 
-pelletierScale ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
-                ⇒ Side → Side → Rule α β → Rule α β
+pelletierScale ∷ (Integral α, E.Scale α, E.Unknown β, E.Add β, E.Mul β, E.Scale β)
+               ⇒ Side     -- ^ Add side.
+               → Side     -- ^ Mul side.
+               → Rule α β -- ^ Big num rule.
+               → Rule α β
 pelletierScale aSide mSide bigNumRule =
     conditional (\n → even $ intLog n `div` 3)
                 (mulScale 6 0 aSide mSide bigNumRule)
                 (mulScale 6 3 aSide mSide bigNumRule)
 
-pelletierScale1 ∷ (Integral α, C.Scale α, C.Unknown β, C.Add β, C.Mul β, C.Scale β)
-                ⇒ Side → Side → Rule α β → Rule α β
+pelletierScale1 ∷ (Integral α, E.Scale α, E.Unknown β, E.Add β, E.Mul β, E.Scale β)
+                ⇒ Side     -- ^ Add side.
+                → Side     -- ^ Mul side.
+                → Rule α β -- ^ Big num rule.
+                → Rule α β
 pelletierScale1 aSide mSide bigNumRule =
     conditional (\n → even $ intLog n `div` 3)
                 (mulScale1 6 0 aSide mSide bigNumRule)

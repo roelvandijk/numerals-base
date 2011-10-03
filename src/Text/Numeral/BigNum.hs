@@ -39,17 +39,17 @@ import "containers-unicode-symbols" Data.Map.Unicode      ( (∪) )
 import "this"                       Text.Numeral
 import "this"                       Text.Numeral.Misc     ( dec )
 import qualified "containers" Data.Map as M ( Map, fromList, lookup )
-import qualified "this"       Text.Numeral.Exp.Classes as C
+import qualified "this"       Text.Numeral.Exp as E
 
 
 --------------------------------------------------------------------------------
 -- Language of Big Numbers
 --------------------------------------------------------------------------------
 
-cardinal ∷ (Monoid s, IsString s, Integral α) ⇒ α → Maybe s
-cardinal = render cardinalRepr ∘ (pos $ fix rule)
+cardinal ∷ (Monoid s, IsString s, Integral α) ⇒ inf → α → Maybe s
+cardinal inf = render cardinalRepr inf ∘ (pos $ fix rule)
 
-rule ∷ (Integral α, C.Unknown β, C.Lit β, C.Add β, C.Mul β) ⇒ Rule α β
+rule ∷ (Integral α, E.Unknown β, E.Lit β, E.Add β, E.Mul β) ⇒ Rule α β
 rule = findRule (   1, lit         )
               [ (  11, add   10 L  )
               , (  20, mul   10 L L)
@@ -62,14 +62,14 @@ rule = findRule (   1, lit         )
               ]
                 (dec 4 - 1)
 
-cardinalRepr ∷ (Monoid s, IsString s) ⇒ Repr s
+cardinalRepr ∷ (Monoid s, IsString s) ⇒ Repr inf s
 cardinalRepr =
-    defaultRepr { reprValue = \n → M.lookup n symMap
+    defaultRepr { reprValue = \_ n → M.lookup n symMap
                 , reprAdd   = Just $ \_ _ _ → ""
                 , reprMul   = Just $ \_ _ _ → ""
                 }
 
-symMap ∷ (Integral α, IsString s) ⇒ M.Map α (Ctx Exp → s)
+symMap ∷ (Integral α, IsString s) ⇒ M.Map α (Ctx (Exp i) → s)
 symMap = M.fromList
          [ (1, forms "m"     "un"       "un"       ""        "")
          , (2, forms "b"     "duo"      "duo"      "vi"      "du")
@@ -95,7 +95,7 @@ symMap = M.fromList
          , (1000, const "millin")
          ]
 
-forms ∷ s → s → s → s → s → Ctx Exp → s
+forms ∷ s → s → s → s → s → Ctx (Exp i) → s
 forms t a1 a2 m1 m2 ctx =
     case ctx of
       CtxAdd _ (Lit 10)  _ → a1
@@ -104,37 +104,38 @@ forms t a1 a2 m1 m2 ctx =
       CtxMul {}            → m2
       _                    → t
 
+
 --------------------------------------------------------------------------------
 -- Representations of scales
 --------------------------------------------------------------------------------
 
 scaleRepr ∷ (IsString s, Monoid s)
-          ⇒ (Ctx Exp → s) -- ^Postfix.
-          → [(ℤ, Ctx Exp → s)]
-          → ScaleRepr s
-scaleRepr pf syms _ _ e ctx = (⊕ pf ctx) <$> render repr e
+          ⇒ (Ctx (Exp i) → s) -- ^Postfix.
+          → [(ℤ, Ctx (Exp i) → s)]
+          → ScaleRepr i s
+scaleRepr pf syms inf _ _ e ctx = (⊕ pf ctx) <$> render repr inf e
     where
-      repr = cardinalRepr { reprValue = \n → M.lookup n syms' }
+      repr = cardinalRepr { reprValue = \_ n → M.lookup n syms' }
       syms' = M.fromList syms ∪ symMap
 
 pelletierRepr ∷ (IsString s, Monoid s)
-              ⇒ (Ctx Exp → s) -- ^Postfix for offset 0 names.
-              → (Ctx Exp → s) -- ^Postfix for offset 3 names.
-              → [(ℤ, Ctx Exp → s)]
-              → ScaleRepr s
-pelletierRepr pf0 pf3 syms
-              b o e ctx | o ≡ 0 = scaleRepr pf0 syms b o e ctx
-                        | o ≡ 3 = scaleRepr pf3 syms b o e ctx
+              ⇒ (Ctx (Exp i) → s) -- ^Postfix for offset 0 names.
+              → (Ctx (Exp i) → s) -- ^Postfix for offset 3 names.
+              → [(ℤ, Ctx (Exp i) → s)]
+              → ScaleRepr i s
+pelletierRepr pf0 pf3 syms inf
+              b o e ctx | o ≡ 0 = scaleRepr pf0 syms inf b o e ctx
+                        | o ≡ 3 = scaleRepr pf3 syms inf b o e ctx
                         | otherwise = Nothing
 
-quantityName ∷ s → s → Ctx Exp → s
+quantityName ∷ s → s → Ctx (Exp i) → s
 quantityName s p ctx =
     case ctx of
       CtxMul _ (Lit 1) _ → s
       CtxMul {}          → p
       _                  → s
 
-ordQuantityName ∷ s → s → s → s → Ctx Exp → s
+ordQuantityName ∷ s → s → s → s → Ctx (Exp i) → s
 ordQuantityName sc so pc po ctx =
     case ctx of
       CtxMul _ (Lit 1) _ | outside   → so
