@@ -31,7 +31,7 @@ module Text.Numeral.Rules
   , mul, mul1
   , sub
 
-  , mulScale, mulScale1
+  , mulScale_, mulScale, mulScale1
   , shortScale,  longScale,  pelletierScale
   , shortScale1, longScale1, pelletierScale1
 
@@ -254,19 +254,21 @@ step1 ∷ (Integral α, E.Unknown β, E.Lit β, E.Add β, E.Mul β)
       ⇒ α → α → Side → Side → Rule α β
 step1 = mkStep lit1 add mul1
 
--- TODO: mulScale must use inflection for Spanish
--- TODO: parametrise mulScale with add and mul rules.
--- TODO: the user can then replace add and mul with an inflection rule.
-
--- See: http://en.wikipedia.org/wiki/Names_of_large_numbers
-mulScale ∷ (Integral α, E.Scale α, E.Unknown β, E.Add β, E.Mul β, E.Scale β)
-         ⇒ α        -- ^ Base.
-         → α        -- ^ Offset.
-         → Side     -- ^ Add side.
-         → Side     -- ^ Mul side.
-         → Rule α β -- ^ Big num rule.
-         → Rule α β
-mulScale base offset aSide mSide bigNumRule =
+mulScale_ ∷ (Integral α, E.Scale α, E.Unknown β, E.Add β, E.Mul β, E.Scale β)
+          ⇒ ( (α → β) -- Parent rule.
+            → α       -- First multiplication value (not converted).
+            → β       -- Second multiplication value (scale step,
+                      -- already converted).
+            → Side    -- Multiplication side.
+            → β
+            )        -- ^ Performs the multiplication.
+          → α        -- ^ Base.
+          → α        -- ^ Offset.
+          → Side     -- ^ Add side.
+          → Side     -- ^ Mul side.
+          → Rule α β -- ^ Big num rule.
+          → Rule α β
+mulScale_ doMul base offset aSide mSide bigNumRule =
     \f n → let rank    = (intLog n - offset) `div` base
                base'   = fromIntegral base
                offset' = fromIntegral offset
@@ -274,15 +276,24 @@ mulScale base offset aSide mSide bigNumRule =
                rankExp = (fix bigNumRule) rank
                (m, a)  = n `divMod` E.scale base' offset' rank'
                scale'  = E.scale base' offset' rankExp
-               mval | m ≡ 1     = scale'
-                    | otherwise = (flipIfR mSide E.mul)
-                                  (f m)
-                                  scale'
+               mval    = doMul f m scale' mSide
            in if E.isUnknown rankExp
               then E.unknown
               else if a ≡ 0
                    then mval
                    else (flipIfR aSide E.add) (f a) mval
+
+mulScale ∷ (Integral α, E.Scale α, E.Unknown β, E.Add β, E.Mul β, E.Scale β)
+         ⇒ α        -- ^ Base.
+         → α        -- ^ Offset.
+         → Side     -- ^ Add side.
+         → Side     -- ^ Mul side.
+         → Rule α β -- ^ Big num rule.
+         → Rule α β
+mulScale = mulScale_ $ \f m scale' mSide →
+                         case m of
+                           1 → scale'
+                           _ → (flipIfR mSide E.mul) (f m) scale'
 
 mulScale1 ∷ (Integral α, E.Scale α, E.Unknown β, E.Add β, E.Mul β, E.Scale β)
           ⇒ α        -- ^ Base.
@@ -291,22 +302,7 @@ mulScale1 ∷ (Integral α, E.Scale α, E.Unknown β, E.Add β, E.Mul β, E.Scal
           → Side     -- ^ Mul side.
           → Rule α β -- ^ Big num rule.
           → Rule α β
-mulScale1 base offset aSide mSide bigNumRule =
-    \f n → let rank    = (intLog n - offset) `div` base
-               base'   = fromIntegral base
-               offset' = fromIntegral offset
-               rank'   = fromIntegral rank
-               rankExp = (fix bigNumRule) rank
-               (m, a)  = n `divMod` E.scale base' offset' rank'
-               scale'  = E.scale base' offset' rankExp
-               mval    = (flipIfR mSide E.mul)
-                         (f m)
-                         scale'
-           in if E.isUnknown rankExp
-              then E.unknown
-              else if a ≡ 0
-                   then mval
-                   else (flipIfR aSide E.add) (f a) mval
+mulScale1 = mulScale_ $ \f m scale' mSide → (flipIfR mSide E.mul) (f m) scale'
 
 shortScale ∷ (Integral α, E.Scale α, E.Unknown β, E.Add β, E.Mul β, E.Scale β)
            ⇒ Side     -- ^ Add side.
