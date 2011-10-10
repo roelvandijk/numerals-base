@@ -11,6 +11,7 @@ module Text.Numeral.BigNum
   , symMap
   , forms
 
+  , PostfixRepr
   , scaleRepr
   , pelletierRepr
 
@@ -109,34 +110,41 @@ forms t a1 a2 m1 m2 ctx =
 -- Representations of scales
 --------------------------------------------------------------------------------
 
+-- | Function that renders the postfix part of a large number name. Or
+-- more simply put, this calculates the \"illion\" part of
+-- \"million\", \"billion\", etc.
+type PostfixRepr i s = i           -- ^ Current inflection.
+                     → Ctx (Exp i) -- ^ Context.
+                     → s           -- ^ Postfix representation.
+
 scaleRepr ∷ (IsString s, Monoid s)
-          ⇒ (Ctx (Exp i) → s) -- ^Postfix.
-          → [(ℤ, Ctx (Exp i) → s)]
+          ⇒ PostfixRepr i s
+          → [(ℤ, Ctx (Exp i) → s)] -- ^ Additional symbol map entries.
           → ScaleRepr i s
-scaleRepr pf syms inf _ _ e ctx = (⊕ pf ctx) <$> render repr inf e
+scaleRepr pf syms inf _ _ e ctx = (⊕ pf inf ctx) <$> render repr inf e
     where
       repr = cardinalRepr { reprValue = \_ n → M.lookup n syms' }
       syms' = M.fromList syms ∪ symMap
 
 pelletierRepr ∷ (IsString s, Monoid s)
-              ⇒ (Ctx (Exp i) → s) -- ^Postfix for offset 0 names.
-              → (Ctx (Exp i) → s) -- ^Postfix for offset 3 names.
-              → [(ℤ, Ctx (Exp i) → s)]
+              ⇒ PostfixRepr i s -- ^Postfix for offset 0 names.
+              → PostfixRepr i s -- ^Postfix for offset 3 names.
+              → [(ℤ, Ctx (Exp i) → s)] -- ^ Additional symbol map entries.
               → ScaleRepr i s
 pelletierRepr pf0 pf3 syms inf
               b o e ctx | o ≡ 0 = scaleRepr pf0 syms inf b o e ctx
                         | o ≡ 3 = scaleRepr pf3 syms inf b o e ctx
                         | otherwise = Nothing
 
-quantityName ∷ s → s → Ctx (Exp i) → s
-quantityName s p ctx =
+quantityName ∷ s → s → PostfixRepr i s
+quantityName s p _ ctx =
     case ctx of
       CtxMul _ (Lit 1) _ → s
       CtxMul {}          → p
       _                  → s
 
-ordQuantityName ∷ s → s → s → s → Ctx (Exp i) → s
-ordQuantityName sc so pc po ctx =
+ordQuantityName ∷ s → s → s → s → PostfixRepr i s
+ordQuantityName sc so pc po _ ctx =
     case ctx of
       CtxMul _ (Lit 1) _ | outside   → so
                          | otherwise → sc
