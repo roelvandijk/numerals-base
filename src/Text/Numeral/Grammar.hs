@@ -6,7 +6,8 @@
 module Text.Numeral.Grammar
     ( -- * Grammatical categories
       -- ** Case
-      Nominative   (nominative,   isNominative)
+      NoCase       (noCase,       hasNoCase)
+    , Nominative   (nominative,   isNominative)
     , Accusative   (accusative,   isAccusative)
     , Dative       (dative,       isDative)
     , Ablative     (ablative,     isAblative)
@@ -15,11 +16,13 @@ module Text.Numeral.Grammar
     , Locative     (locative,     isLocative)
     , Instrumental (instrumental, isInstrumental)
       -- ** Gender
+    , NoGender     (noGender,     hasNoGender)
     , Neuter       (neuter,       isNeuter)
     , Masculine    (masculine,    isMasculine)
     , Feminine     (feminine,     isFeminine)
     , Common       (common,       isCommon)
       -- ** Number
+    , NoNumber     (noNumber,     hasNoNumber)
     , Singular     (singular,     isSingular)
     , Dual         (dual,         isDual)
     , Trial        (trial,        isTrial)
@@ -38,6 +41,10 @@ import "base" Data.Bool ( Bool )
 --------------------------------------------------------------------------------
 -- Case
 --------------------------------------------------------------------------------
+
+class NoCase α where
+    noCase ∷ α → α
+    hasNoCase ∷ α → Bool
 
 class Nominative α where
     nominative ∷ α → α
@@ -76,6 +83,10 @@ class Instrumental α where
 -- Gender
 --------------------------------------------------------------------------------
 
+class NoGender α where
+    noGender ∷ α → α
+    hasNoGender ∷ α → Bool
+
 class Neuter α where
     neuter ∷ α → α
     isNeuter ∷ α → Bool
@@ -96,6 +107,10 @@ class Common α where
 --------------------------------------------------------------------------------
 -- Number
 --------------------------------------------------------------------------------
+
+class NoNumber α where
+    noNumber ∷ α → α
+    hasNoNumber ∷ α → Bool
 
 class Singular α where
     singular ∷ α → α
