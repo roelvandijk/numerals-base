@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude, UnicodeSyntax #-}
+{-# LANGUAGE NoImplicitPrelude, PackageImports, UnicodeSyntax #-}
 
 module Main where
 
@@ -7,11 +7,8 @@ module Main where
 -- Imports
 --------------------------------------------------------------------------------
 
--- from base:
-import System.IO ( IO )
-
--- from test-framework:
-import Test.Framework ( Test, defaultMain )
+import "base" System.IO ( IO )
+import "test-framework" Test.Framework ( Test, defaultMain )
 
 
 --------------------------------------------------------------------------------

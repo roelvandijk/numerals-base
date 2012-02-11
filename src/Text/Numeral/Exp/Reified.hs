@@ -1,4 +1,5 @@
-{-# LANGUAGE NoImplicitPrelude
+{-# LANGUAGE CPP
+           , NoImplicitPrelude
            , PackageImports
            , TypeFamilies
            , UnicodeSyntax
@@ -87,7 +88,11 @@ instance E.Dual (Exp i) where dual = Dual
 instance E.Plural (Exp i) where plural = Plural
 -- | Precisely the 'Inflection' constructor.
 instance E.Inflection (Exp i) where
+#if __GLASGOW_HASKELL__ < 704
     type E.Inf (Exp i) = i
+#else
+    type Inf (Exp i) = i
+#endif
     inflection = Inflection
 
 

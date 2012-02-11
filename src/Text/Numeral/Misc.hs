@@ -37,7 +37,7 @@ dec = (10 ^)
 intLog ∷ (Integral α) ⇒ α → α
 -- GHC >= 7.2.x
 #if __GLASGOW_HASKELL__ >= 702
-intLog x = fromIntegral $ I# $ integerLogBase# 10 $ toInteger x
+intLog x = fromIntegral $ I# (integerLogBase# 10 (toInteger x))
 #else
 intLog x | x < 0 = error "intLog: undefined for negative numbers"
          | otherwise = go x 0
