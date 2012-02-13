@@ -70,6 +70,11 @@ render (Repr {..}) = go CtxEmpty
                                 rs ← reprSub
                                 rsc ← reprSubCombine
                                 Just $ rsc (rs x y ctx) x' x y' y
+      go ctx inf (Frac x y) = do x' ← go (CtxFrac L y ctx) inf x
+                                 y' ← go (CtxFrac R x ctx) inf y
+                                 rf ← reprFrac
+                                 rfc ← reprFracCombine
+                                 Just $ rfc (rf x y ctx) x' x y' y
       go ctx inf (Scale b o r) = reprScale inf b o r ctx
       go ctx inf (Dual   x) = go (CtxDual   ctx) inf x
       go ctx inf (Plural x) = go (CtxPlural ctx) inf x
@@ -93,30 +98,35 @@ data Repr i s =
     , reprValue ∷ i → ℤ → Maybe (Ctx (Exp i) → s)
       -- | Renders a negation. This concerns the negation itself, not
       -- the thing being negated.
-    , reprNeg ∷ Maybe ((Exp i) → Ctx (Exp i) → s)
+    , reprNeg ∷ Maybe (Exp i → Ctx (Exp i) → s)
       -- | Renders an addition. This concerns the addition itself, not
       -- the things being added. For example: In \"one hundred and
       -- eighty\" this function would be responsible for rendering the
       -- \"and\".
-    , reprAdd ∷ Maybe ((Exp i) → (Exp i) → Ctx (Exp i) → s)
+    , reprAdd ∷ Maybe (Exp i → Exp i → Ctx (Exp i) → s)
       -- | Renders a multiplication. This concerns the multiplication
       -- itself, not the things being multiplied.
-    , reprMul ∷ Maybe ((Exp i) → (Exp i) → Ctx (Exp i) → s)
+    , reprMul ∷ Maybe (Exp i → Exp i → Ctx (Exp i) → s)
       -- | Renders a subtraction. This concerns the subtraction
       -- itself, not the things being subtracted.
-    , reprSub ∷ Maybe ((Exp i) → (Exp i) → Ctx (Exp i) → s)
+    , reprSub ∷ Maybe (Exp i → Exp i → Ctx (Exp i) → s)
+      -- | Renders a fraction. This concerns the fraction itself, not
+      -- the numerator or the denominator.
+    , reprFrac ∷ Maybe (Exp i → Exp i → Ctx (Exp i) → s)
       -- | Renders a step in a scale of large values.
     , reprScale ∷ ScaleRepr i s
       -- | Combines a negation and the thing being negated. For
       -- example: this would combine \"minus\" and \"three\" into
       -- \"minus three\".
-    , reprNegCombine ∷ Maybe (s → s → (Exp i) → s)
+    , reprNegCombine ∷ Maybe (s → s → Exp i → s)
       -- | Combines an addition and the things being added.
-    , reprAddCombine ∷ Maybe (s → s → (Exp i) → s → (Exp i) → s)
+    , reprAddCombine ∷ Maybe (s → s → Exp i → s → Exp i → s)
       -- | Combines a multiplication and the things being multiplied.
-    , reprMulCombine ∷ Maybe (s → s → (Exp i) → s → (Exp i) → s)
+    , reprMulCombine ∷ Maybe (s → s → Exp i → s → Exp i → s)
       -- | Combines a subtraction and the things being subtracted.
-    , reprSubCombine ∷ Maybe (s → s → (Exp i) → s → (Exp i) → s)
+    , reprSubCombine ∷ Maybe (s → s → Exp i → s → Exp i → s)
+      -- | Combines a fraction and the numerator and denominator.
+    , reprFracCombine ∷ Maybe (s → s → Exp i → s → Exp i → s)
     }
 
 -- | Function that renders the representation of a step in a scale of
@@ -141,11 +151,13 @@ defaultRepr =
          , reprAdd     = Nothing
          , reprMul     = Nothing
          , reprSub     = Nothing
+         , reprFrac    = Nothing
          , reprScale   = \_ _ _ _ _ → Nothing
-         , reprNegCombine = Just $ \n x _     → n ⊕ x
-         , reprAddCombine = Just $ \a x _ y _ → x ⊕ a ⊕ y
-         , reprMulCombine = Just $ \m x _ y _ → x ⊕ m ⊕ y
-         , reprSubCombine = Just $ \s x _ y _ → x ⊕ s ⊕ y
+         , reprNegCombine  = Just $ \n x _     → n ⊕ x
+         , reprAddCombine  = Just $ \a x _ y _ → x ⊕ a ⊕ y
+         , reprMulCombine  = Just $ \m x _ y _ → x ⊕ m ⊕ y
+         , reprSubCombine  = Just $ \s x _ y _ → x ⊕ s ⊕ y
+         , reprFracCombine = Just $ \f n _ d _ → n ⊕ f ⊕ d
          }
 
 
@@ -164,6 +176,8 @@ data Ctx α   -- | The empty context. Used for top level expressions.
            | CtxMul Side α (Ctx α)
              -- | Subtraction context.
            | CtxSub Side α (Ctx α)
+             -- | Fraction context.
+           | CtxFrac Side α (Ctx α)
              -- | Scale context.
            | CtxScale (Ctx α)
              -- | Dual context.
@@ -179,9 +193,10 @@ posIndex c = go 0 c
       go ∷ ℤ → Ctx α → ℤ
       go acc CtxEmpty = acc
       go acc (CtxNeg nc) = go acc nc
-      go acc (CtxAdd as _ ac) = go (acc + if as ≡ L then -1 else 1) ac
-      go acc (CtxMul ms _ mc) = go (acc + if ms ≡ L then -1 else 1) mc
-      go acc (CtxSub ss _ sc) = go (acc + if ss ≡ L then -1 else 1) sc
+      go acc (CtxAdd  as _ ac) = go (acc + if as ≡ L then -1 else 1) ac
+      go acc (CtxMul  ms _ mc) = go (acc + if ms ≡ L then -1 else 1) mc
+      go acc (CtxSub  ss _ sc) = go (acc + if ss ≡ L then -1 else 1) sc
+      go acc (CtxFrac fs _ fc) = go (acc + if fs ≡ L then -1 else 1) fc
       go acc (CtxScale  sc) = go acc sc
       go acc (CtxDual   dc) = go acc dc
       go acc (CtxPlural pc) = go acc pc
@@ -202,12 +217,14 @@ isOutside s c = go c
       go ∷ Ctx α → Bool
       go CtxEmpty = True
       go (CtxNeg nc) = go nc
-      go (CtxAdd as _ ac) | as ≡ s    = go ac
-                          | otherwise = False
-      go (CtxMul ms _ mc) | ms ≡ s    = go mc
-                          | otherwise = False
-      go (CtxSub ss _ sc) | ss ≡ s    = go sc
-                          | otherwise = False
+      go (CtxAdd  as _ ac) | as ≡ s    = go ac
+                           | otherwise = False
+      go (CtxMul  ms _ mc) | ms ≡ s    = go mc
+                           | otherwise = False
+      go (CtxSub  ss _ sc) | ss ≡ s    = go sc
+                           | otherwise = False
+      go (CtxFrac fs _ fc) | fs ≡ s    = go fc
+                           | otherwise = False
       go (CtxScale  sc) = go sc
       go (CtxDual   dc) = go dc
       go (CtxPlural pc) = go pc

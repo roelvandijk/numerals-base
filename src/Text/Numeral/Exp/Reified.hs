@@ -39,6 +39,8 @@ data Exp i
          | Mul (Exp i) (Exp i)
            -- | One expression subtracted from another expression.
          | Sub (Exp i) (Exp i)
+           -- | A fraction.
+         | Frac (Exp i) (Exp i)
            -- | A step in a scale of large values.
          | Scale ℤ ℤ (Exp i)
            -- | A dual form of an expression.
@@ -56,11 +58,12 @@ showExp ∷ Exp i → String
 showExp Unknown = "Unknown"
 showExp (Lit n) = "Lit " ++ show n
 showExp (Neg x) = "Neg (" ++ showExp x ++ ")"
-showExp (Add x y) = "Add (" ++ showExp x ++ ") (" ++ showExp y ++ ")"
-showExp (Mul x y) = "Mul (" ++ showExp x ++ ") (" ++ showExp y ++ ")"
-showExp (Sub x y) = "Sub (" ++ showExp x ++ ") (" ++ showExp y ++ ")"
+showExp (Add  x y) = "Add ("  ++ showExp x ++ ") (" ++ showExp y ++ ")"
+showExp (Mul  x y) = "Mul ("  ++ showExp x ++ ") (" ++ showExp y ++ ")"
+showExp (Sub  x y) = "Sub ("  ++ showExp x ++ ") (" ++ showExp y ++ ")"
+showExp (Frac x y) = "Frac (" ++ showExp x ++ ") (" ++ showExp y ++ ")"
 showExp (Scale b o r) = "Scale " ++ show b ++ " " ++ show o ++ " (" ++ showExp r ++ ")"
-showExp (Dual x) = "Dual (" ++ showExp x ++ ")"
+showExp (Dual   x) = "Dual ("   ++ showExp x ++ ")"
 showExp (Plural x) = "Plural (" ++ showExp x ++ ")"
 showExp (Inflection _ x) = "Inflection <func> (" ++ showExp x ++ ")"
 
@@ -80,6 +83,8 @@ instance E.Add (Exp i) where add = Add
 instance E.Mul (Exp i) where mul = Mul
 -- | Precisely the 'Sub' constructor.
 instance E.Sub (Exp i) where sub = Sub
+-- | Precisely the 'Frac' constructor.
+instance E.Frac (Exp i) where frac = Frac
 -- | Precisely the 'Scale' constructor.
 instance E.Scale (Exp i) where scale = Scale
 -- | Precisely the 'Dual' constructor.

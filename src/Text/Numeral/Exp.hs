@@ -12,6 +12,7 @@ module Text.Numeral.Exp
     , Add(add)
     , Mul(mul)
     , Sub(sub)
+    , Frac(frac)
     , Scale(scale)
     , Dual(dual)
     , Plural(plural)
@@ -75,6 +76,13 @@ class Mul α where mul ∷ α → α → α
 -- > "duodēvīgintī" = lit 2 `sub` (lit 2 `mul` lit 10)
 class Sub α where sub ∷ α → α → α
 
+-- | A fraction.
+--
+-- Example in English:
+--
+-- > "two thirds" = `frac` (lit 2) (lit 3)
+class Frac α where frac ∷ α → α → α
+
 -- | A step in a scale of large values.
 --
 -- Should be interpreted as @10 ^ (rank * base + offset)@.
@@ -132,3 +140,5 @@ instance Add ℤ where add = (+)
 instance Mul ℤ where mul = (*)
 instance Sub ℤ where sub = subtract
 instance Scale ℤ where scale b o r = 10 ^ (r⋅b + o)
+
+-- TODO: instances for ℚ?
