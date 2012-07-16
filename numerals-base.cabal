@@ -5,7 +5,7 @@ build-type:    Simple
 stability:     experimental
 author:        Roel van Dijk <vandijk.roel@gmail.com>, Bas van Dijk <v.dijk.bas@gmail.com>
 maintainer:    Roel van Dijk <vandijk.roel@gmail.com>
-copyright:     2009–2011 Roel van Dijk, Bas van Dijk
+copyright:     2009–2012 Roel van Dijk, Bas van Dijk
 license:       BSD3
 license-file:  LICENSE
 homepage:      https://github.com/roelvandijk/numerals-base
@@ -40,7 +40,7 @@ library
   hs-source-dirs: src
   ghc-options: -Wall
 
-  build-depends: base                       >= 3.0.3.1 && < 4.6
+  build-depends: base                       >= 3.0.3.1 && < 4.7
                , base-unicode-symbols       >= 0.2.2   && < 0.3
                , containers                 >= 0.4     && < 0.5
                , containers-unicode-symbols >= 0.3     && < 0.4
@@ -64,7 +64,7 @@ library
 test-suite test-numerals-base
   type: exitcode-stdio-1.0
   main-is: test.hs
-  hs-source-dirs: test
+  hs-source-dirs: src-test
   ghc-options: -Wall
 
   build-depends: base                       >= 3.0.3.1 && < 4.6
@@ -72,6 +72,6 @@ test-suite test-numerals-base
                , numerals-base              == 0.4
                , HUnit                      >= 1.2.2   && < 1.3
                , QuickCheck                 >= 2.4.2   && < 2.5
-               , test-framework             >= 0.3.3   && < 0.6
+               , test-framework             >= 0.3.3   && < 0.7
                , test-framework-hunit       >= 0.2.6   && < 0.3
                , test-framework-quickcheck2 >= 0.2.12  && < 0.3
